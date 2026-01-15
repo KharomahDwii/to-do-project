@@ -1,6 +1,8 @@
 <div class="container mx-auto p-6 bg-beige min-h-screen">
-    <div class="container mx-auto p-6 min-h-screen" style="background-color: #f8f4f0;">
-    <h1 class="text-4xl font-bold text-brown mb-8">TO DO LIST</h1>
+    <div class="container mx-auto p-6 min-h-screen" style="background-color: #e5c9ad;">
+    <<h1 class="text-3xl md:text-5xl font-bold text-center mb-6" style="color: #5a4a42;">
+            TO DO LIST
+        </h1>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
@@ -8,11 +10,16 @@
         <div class="bg-brown rounded-3xl {
                             border-radius: 10px
                             } border-none focus:outline-none focus:ring-2 focus:ring-beige"
-                            style="background-color: #eecfb9; color: #48281c; font-weight: bold; border-radius: 20px; padding: 12px 0; p-6 text-beige shadow-lg; ">
+                            style="background-color: #ffffff; color: #48281c; font-weight: bold; border-radius: 20px; padding: 12px 0; p-6 text-beige shadow-lg; ">
             
             <ul class="space-y-4">
                 @forelse($todos as $todo)
-                    <li class="flex items-center justify-between p-4 bg-beige/20 rounded-xl">
+                    <!-- MODIFIKASI: Menambahkan data-todo-id, data-reminder, dan data-title agar JS bisa membacanya -->
+                    <li class="flex items-center justify-between p-4 bg-beige/20 rounded-xl"
+                        data-todo-id="{{ $todo->id }}"
+                        data-reminder="{{ $todo->reminder_at ? $todo->reminder_at->format('Y-m-d\TH:i:s') : '' }}"
+                        data-title="{{ $todo->title }}"
+                    >
                         
                         <div class="flex items-center space-x-3 flex-grow">
                            <input
@@ -39,13 +46,13 @@
                     @if($todo->reminder_at)
                         | ⏰ {{ $todo->reminder_at->format('d/m/Y H:i') }}
                                 @if(now()->gt($todo->reminder_at) && !$todo->completed)
-                                        <span class="badge bg-warning text-dark ms-1">Waktu lewat!</span>
+                                        <span class="badge bg-warning text-dark ms-1">| Waktu lewat!</span>
                                                 @endif
                                                     @endif
                                              </small>
                                         @if($todo->completed)
                                         <small class="d-block mt-0.09 opacity-75" style="font-size: 0.8rem; font-style: italic;">
-                                        ✅ Telah Dikerjakan
+                                        | Telah Dikerjakan
                                     </small>
                                     @endif
                                 </div>
@@ -221,136 +228,83 @@
 @push('scripts')
 <script>
 document.addEventListener('livewire:initialized', () => {
+    // Minta izin notifikasi sekali saat halaman dimuat
+    if (Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+
+    // MODIFIKASI LOGIKA PENGECEKAN WAKTU
     const checkReminders = () => {
-        document.querySelectorAll('[data-reminder]').forEach(el => {
-            const reminderTime = el.getAttribute('data-reminder');
-            const isCompleted = el.getAttribute('data-completed') === '1';
-            const title = el.getAttribute('data-title');
+        document.querySelectorAll('li[data-todo-id]').forEach(el => {
+            const reminderStr = el.getAttribute('data-reminder');
             const todoId = el.getAttribute('data-todo-id');
+            const title = el.getAttribute('data-title');
+            
+            const checkbox = el.querySelector('input[type="checkbox"]');
+            const isCompleted = checkbox ? checkbox.checked : false;
 
-            if (!reminderTime || isCompleted || !todoId) return;
+            if (!reminderStr || isCompleted) return;
 
-            const now = new Date();
-            const remindAt = new Date(reminderTime);
+            const now = new Date().getTime();
+            const remindAt = new Date(reminderStr).getTime();
+            const diff = remindAt - now;
 
-            if (remindAt <= now) {
-                const notifiedKey = 'notified_' + todoId;
-                if (localStorage.getItem(notifiedKey)) return;
+            // Konstanta 5 menit dalam milidetik
+            const fiveMinutesMs = 5 * 60 * 1000;
 
-                localStorage.setItem(notifiedKey, '1');
-                showCustomNotification(todoId, title);
+            // --- 1. LOGIKA 5 MENIT SEBELUMNYA ---
+            // Cek jika waktu masih di masa depan (diff > 0) TAPI kurang dari 5 menit lagi
+            if (diff > 0 && diff <= fiveMinutesMs) {
+                const key = `notified_5min_${todoId}`;
+                // Cek localstorage agar notifikasi tidak muncul berulang terus menerus
+                if (!localStorage.getItem(key)) {
+                    sendBrowserNotification(title, "⏰ Sisa waktu 5 menit lagi!");
+                    localStorage.setItem(key, 'true');
+                }
+            }
+
+            // --- 2. LOGIKA PAS WAKTU / WAKTU LEWAT ---
+            // Cek jika waktu sudah habis (diff <= 0)
+            if (diff <= 0) {
+                const key = `notified_exact_${todoId}`;
+                if (!localStorage.getItem(key)) {
+                    sendBrowserNotification(title, "⚠️ Waktu tiba / Waktu lewat!");
+                    localStorage.setItem(key, 'true');
+                    
+                    // Opsional: Anda bisa memicu update Livewire di sini jika ingin
+                    Livewire.dispatch('refresh-todos');
+                }
             }
         });
 
-        setTimeout(checkReminders, 30000);
+        // Ulangi pengecekan setiap 5 detik
+        setTimeout(checkReminders, 5000); 
     };
 
-    function showCustomNotification(todoId, title) {
-        if (document.getElementById('custom-notif-' + todoId)) return;
+    // Fungsi kirim notifikasi browser
+    function sendBrowserNotification(title, body) {
+        if (Notification.permission === "granted") {
+            const notification = new Notification(title, {
+                body: body,
+                icon: '/favicon.ico' // Ganti path icon jika ada
+            });
 
-        const notif = document.createElement('div');
-        notif.id = 'custom-notif-' + todoId;
-        notif.className = 'alert alert-info position-fixed bottom-0 end-0 m-3 shadow-lg';
-        notif.style.cssText = `
-            background: white;
-            border-left: 4px solid #198754;
-            border-radius: 8px;
-            padding: 1rem;
-            max-width: 320px;
-            font-size: 0.9rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 10000;
-        `;
-        notif.innerHTML = `
-            <strong>⏰ Pengingat!</strong><br>
-            <em>${title}</em>
-            <div class="mt-2 d-flex gap-2">
-                <button class="btn btn-sm btn-success" onclick="markDone(${todoId})">
-                    Sudah Dikerjakan
-                </button>
-                <button class="btn btn-sm btn-warning" onclick="snooze(${todoId})">
-                    Snooze (5 menit)
-                </button>
-            </div>
-        `;
-        document.body.appendChild(notif);
-
-        setTimeout(() => {
-            if (notif.parentNode) notif.remove();
-        }, 15000);
-    }
-
-    // === PANGGIL LIVWIRE SECARA LANGSUNG ===
-window.markDone = function(todoId) {
-    Livewire.dispatch('markAsCompletedFromNotification', [todoId]);
-
-    const li = document.querySelector(`[data-todo-id="${todoId}"]`);
-    if (!li) return;
-
-    // 1. Centang checkbox
-    const checkbox = li.querySelector('input[type="checkbox"]');
-    if (checkbox) {
-        checkbox.checked = true;
-    }
-
-    // 2. Coret teks
-    const textSpan = li.querySelector('span');
-    if (textSpan) {
-        textSpan.style.textDecoration = 'line-through';
-        textSpan.style.color = '#999';
-    }
-
-    // 3. Ganti "Waktu lewat!" → "Telah Dikerjakan", atau tambahkan jika perlu
-    const warningBadge = li.querySelector('span.badge.bg-warning');
-    if (warningBadge) {
-        warningBadge.textContent = 'Telah Dikerjakan';
-        warningBadge.className = 'badge bg-success ms-1';
-    } else {
-        // Cari elemen pengingat (yang ada ⏰)
-        const reminderEl = Array.from(li.querySelectorAll('small')).find(el =>
-            el.textContent.trim().startsWith('⏰')
-        );
-
-        if (reminderEl) {
-            const doneLabel = document.createElement('span');
-            doneLabel.className = 'badge bg-success ms-1';
-            doneLabel.textContent = 'Telah Dikerjakan';
-            reminderEl.appendChild(doneLabel);
-        } else {
-            // Jika tidak ada pengingat, tampilkan di bawah tanggal
-            const dateEl = li.querySelector('small.d-block.text-muted');
-            if (dateEl) {
-                const doneDiv = document.createElement('small');
-                doneDiv.className = 'd-block mt-1 text-success';
-                doneDiv.innerHTML = '<strong>Telah Dikerjakan</strong>';
-                dateEl.parentNode.insertBefore(doneDiv, dateEl.nextSibling);
-            }
+            // Opsional: Fokus ke tab saat notifikasi diklik
+            notification.onclick = function() {
+                window.focus();
+                notification.close();
+            };
         }
     }
 
-    // Simpan status ke DOM
-    li.setAttribute('data-completed', '1');
-
-    // Hapus notifikasi
-    const notif = document.getElementById('custom-notif-' + todoId);
-    if (notif) notif.remove();
-};
-
-    window.snooze = function(todoId) {
-        const newTime = new Date(Date.now() + 5 * 60 * 1000);
-        localStorage.setItem('snoozed_until_' + todoId, newTime.getTime());
-
-        const li = document.querySelector(`[data-todo-id="${todoId}"]`);
-        if (li) {
-            li.setAttribute('data-reminder', newTime.toISOString());
-        }
-
-    const notif = document.getElementById('custom-notif-' + todoId);
-    if (notif) notif.remove();
-    };
-
-    // Jalankan pengecekan
+    // Mulai fungsi pengecekan
     checkReminders();
+
+        // 👇 Dengarkan event dari JavaScript dan refresh data
+    Livewire.on('refresh-todos', () => {
+        // Ini akan memicu render ulang komponen Livewire
+        // TANPA mengganggu state form (karena Livewire menyimpan state)
+    });
 });
 </script>
 @endpush

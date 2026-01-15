@@ -99,6 +99,13 @@ class TodoList extends Component
         }
     }
 
+    // Di dalam class TodoList
+public function refreshTodos()
+{
+    // Cukup pastikan todos dimuat ulang
+    $this->todos = \App\Models\Todo::orderBy('created_at', 'desc')->get();
+}
+
     // === ✅ INI YANG KURANG! ===
     public function cancelEdit()
     {
@@ -114,20 +121,23 @@ class TodoList extends Component
         $this->reset(['title', 'description', 'reminder_at']);
     }
 
-    public function markAsCompletedFromNotification($id)
-    {
-        $todo = Todo::find($id);
-        if ($todo) {
-            $todo->completed = true;
-            $todo->save();
-            $this->loadTodos();
-        }
+public function markAsCompletedFromNotification($id)
+{
+    $todo = Todo::find($id);
+    if ($todo) {
+        $todo->completed = true;
+        $todo->save();
     }
+}
 
-    protected function loadTodos()
-    {
-        $this->todos = Todo::all();
-    }
+protected function loadTodos()
+{
+    $this->todos = Todo::orderBy('created_at', 'desc')->get();
+}
+
+protected $listeners = [
+    'refresh-todos' => 'refreshTodos'
+];
 
     public function render()
     {
