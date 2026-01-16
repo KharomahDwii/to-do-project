@@ -1,12 +1,12 @@
 <div class="container mx-auto p-6 bg-beige min-h-screen">
     <div class="container mx-auto p-6 min-h-screen" style="background-color: #e5c9ad;">
-    <<h1 class="text-3xl md:text-5xl font-bold text-center mb-6" style="color: #5a4a42;">
+    <h1 class="text-3xl md:text-5xl font-bold text-center mb-6" style="color: #5a4a42;">
             TO DO LIST
         </h1>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-        <!-- Kolom Kiri: Daftar To-Do -->
+        <!-- klom yg kiri -->
         <div class="bg-brown rounded-3xl {
                             border-radius: 10px
                             } border-none focus:outline-none focus:ring-2 focus:ring-beige"
@@ -14,28 +14,23 @@
             
             <ul class="space-y-4">
                 @forelse($todos as $todo)
-                    <!-- MODIFIKASI: Menambahkan data-todo-id, data-reminder, dan data-title agar JS bisa membacanya -->
                     <li class="flex items-center justify-between p-4 bg-beige/20 rounded-xl"
                         data-todo-id="{{ $todo->id }}"
                         data-reminder="{{ $todo->reminder_at ? $todo->reminder_at->format('Y-m-d\TH:i:s') : '' }}"
-                        data-title="{{ $todo->title }}"
-                    >
-                        
+                        data-title="{{ $todo->title }}">
                         <div class="flex items-center space-x-3 flex-grow">
                            <input
-    type="checkbox"
-    class="me-2 form-check-input"
-    wire:change="toggleCompleted({{ $todo->id }})"
-    {{ $todo->completed ? 'checked' : '' }}
->
+                            type="checkbox"
+                            class="me-2 form-check-input"
+                            wire:change="toggleCompleted({{ $todo->id }})"
+                            {{ $todo->completed ? 'checked' : '' }}>
                             <div>
                                 <div class="font-medium" style="{{ $todo->completed ? 'text-decoration: line-through; color: #000000;' : '' }}">
-    {{ $todo->title }}
-</div>
+                        {{ $todo->title }}
+                        </div>
                                 <div class="text-xs text-beige/70">
-    @if($todo->description)
-        <small class="d-block mt-0.09 opacity-75" style="font-size: 0.85rem; color: #000000; word-wrap: break-word; font-style: italic; max-width: 100%; display: block;" >
- 
+                            @if($todo->description)
+                    <small class="d-block mt-0.09 opacity-75" style="font-size: 0.85rem; color: #000000; word-wrap: break-word; font-style: italic; max-width: 100%; display: block;" >
             <div class="font-medium" style="{{ $todo->completed ? 'text-decoration: line-through; color: #000000;' : '' }}">
     {{ $todo->description }}
 </div>
@@ -90,7 +85,7 @@
                 </svg>
             </button>
 
-            <!-- Form Tambah list -->
+            <!-- form nambah listnya -->
             @if($showAddForm)
                 <div class="p-6 rounded-3xl shadow-lg" style="background-color: #933920; color: #ffffff;">
         <h3 class="text-xl font-semibold mb-4">Tambah list</h3>
@@ -102,11 +97,9 @@
                             class="w-full p-3 bg-beige/30 text-beige rounded-full {
                             border-radius: 10px
                             } border-none focus:outline-none focus:ring-2 focus:ring-beige"
-                            style="background-color: #ffdbdb; color: #933920; font-weight: bold; border-radius: 10px; padding: 12px 0;"
-                        >
+                            style="background-color: #ffdbdb; color: #933920; font-weight: bold; border-radius: 10px; padding: 12px 0;">
                         @error('title') <span class="text-red-400 text-sm">{{ $message }}</span> @enderror
                     </div>
-
                     <div class="mb-4">
                     <textarea
                     wire:model="description"
@@ -150,7 +143,7 @@
                 </div>
             @endif
 
-            <!-- Form Editnya -->
+            <!-- form buat editnya -->
             @if($editingTodoId)
             <div class="p-6 rounded-3xl shadow-lg" style="background-color: #933920; color: #ffffff;">
                 <div class="bg-brown rounded-3xl p-6 shadow-lg">
@@ -170,7 +163,7 @@
                     <div class="mb-4">
                         <textarea
                             wire:model="editDescription"
-                            placeholder="Deskripsi (maks. 200 karakter)"
+                            placeholder="Deskripsi"
                             class="w-full p-3 bg-white/10 text-white rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-white resize-none"
                             rows="3"
                             style="backdrop-filter: blur(10px);"
@@ -228,12 +221,10 @@
 @push('scripts')
 <script>
 document.addEventListener('livewire:initialized', () => {
-    // Minta izin notifikasi sekali saat halaman dimuat
     if (Notification.permission === 'default') {
         Notification.requestPermission();
     }
 
-    // MODIFIKASI LOGIKA PENGECEKAN WAKTU
     const checkReminders = () => {
         document.querySelectorAll('li[data-todo-id]').forEach(el => {
             const reminderStr = el.getAttribute('data-reminder');
@@ -249,61 +240,55 @@ document.addEventListener('livewire:initialized', () => {
             const remindAt = new Date(reminderStr).getTime();
             const diff = remindAt - now;
 
-            // Konstanta 5 menit dalam milidetik
-            const fiveMinutesMs = 5 * 60 * 1000;
+            const fiveMinutesMs = 300 * 1000;
+            const oneMinuteMs = 60 * 1000;
 
-            // --- 1. LOGIKA 5 MENIT SEBELUMNYA ---
-            // Cek jika waktu masih di masa depan (diff > 0) TAPI kurang dari 5 menit lagi
             if (diff > 0 && diff <= fiveMinutesMs) {
                 const key = `notified_5min_${todoId}`;
-                // Cek localstorage agar notifikasi tidak muncul berulang terus menerus
                 if (!localStorage.getItem(key)) {
                     sendBrowserNotification(title, "⏰ Sisa waktu 5 menit lagi!");
                     localStorage.setItem(key, 'true');
                 }
             }
 
-            // --- 2. LOGIKA PAS WAKTU / WAKTU LEWAT ---
-            // Cek jika waktu sudah habis (diff <= 0)
+                if (diff > 0 && diff <= oneMinuteMs) {
+            const key = `notified_1min_${todoId}`;
+            if (!localStorage.getItem(key)) {
+                sendBrowserNotification(title, "⏰ Sisa waktu 1 menit lagi!");
+                localStorage.setItem(key, 'true');
+            }
+        }
+
             if (diff <= 0) {
                 const key = `notified_exact_${todoId}`;
                 if (!localStorage.getItem(key)) {
-                    sendBrowserNotification(title, "⚠️ Waktu tiba / Waktu lewat!");
+                    sendBrowserNotification(title, "Waktu tiba!");
                     localStorage.setItem(key, 'true');
                     
-                    // Opsional: Anda bisa memicu update Livewire di sini jika ingin
                     Livewire.dispatch('refresh-todos');
                 }
             }
         });
 
-        // Ulangi pengecekan setiap 5 detik
         setTimeout(checkReminders, 5000); 
     };
 
-    // Fungsi kirim notifikasi browser
     function sendBrowserNotification(title, body) {
         if (Notification.permission === "granted") {
             const notification = new Notification(title, {
                 body: body,
-                icon: '/favicon.ico' // Ganti path icon jika ada
+                icon: '/favicon.ico' 
             });
 
-            // Opsional: Fokus ke tab saat notifikasi diklik
             notification.onclick = function() {
                 window.focus();
                 notification.close();
             };
         }
     }
-
-    // Mulai fungsi pengecekan
     checkReminders();
 
-        // 👇 Dengarkan event dari JavaScript dan refresh data
     Livewire.on('refresh-todos', () => {
-        // Ini akan memicu render ulang komponen Livewire
-        // TANPA mengganggu state form (karena Livewire menyimpan state)
     });
 });
 </script>

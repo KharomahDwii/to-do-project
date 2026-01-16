@@ -12,10 +12,8 @@ class TodoList extends Component
     public $todos;
     public $reminder_at = '';
 
-    // === TAMBAHAN: Untuk toggle form tambah todo ===
     public $showAddForm = false;
 
-    // === TAMBAHAN: Untuk edit todo ===
     public $editingTodoId = null;
     public $editTitle = '';
     public $editReminderAt = '';
@@ -24,11 +22,10 @@ class TodoList extends Component
 
     protected $rules = [
         'title' => 'required|string|max:50',
-        'description' => 'required|string|max:1000', // ⚠️ Catatan: lihat bawah
+        'description' => 'required|string|max:1000',
         'reminder_at' => 'nullable|date',
     ];
 
-    // === TAMBAHAN: Rules untuk edit ===
     protected $editRules = [
         'editTitle' => 'required|string|max:50',
         'editDescription' => 'required|string|max:1000',
@@ -62,7 +59,7 @@ class TodoList extends Component
     if ($todo) {
         $todo->completed = !$todo->completed;
         $todo->save();
-        $this->loadTodos(); // ← ini penting!
+        $this->loadTodos();
     }
 }
 
@@ -98,15 +95,10 @@ class TodoList extends Component
             $this->loadTodos();
         }
     }
-
-    // Di dalam class TodoList
 public function refreshTodos()
 {
-    // Cukup pastikan todos dimuat ulang
     $this->todos = \App\Models\Todo::orderBy('created_at', 'desc')->get();
 }
-
-    // === ✅ INI YANG KURANG! ===
     public function cancelEdit()
     {
         $this->editingTodoId = null;
@@ -138,7 +130,6 @@ protected function loadTodos()
 protected $listeners = [
     'refresh-todos' => 'refreshTodos'
 ];
-
     public function render()
     {
         return view('livewire.todo-list');
