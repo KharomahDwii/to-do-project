@@ -20,11 +20,9 @@ class ProcessTodoReminders extends Command
             ->get();
 
         foreach ($overdueTodos as $todo) {
-            // Tandai sebagai sudah diingatkan
             $todo->notified = true;
             $todo->save();
 
-            // Opsional: kirim email, log, dll
             $this->info("Notifikasi diproses untuk: {$todo->title}");
         }
 

@@ -22,13 +22,13 @@ class TodoList extends Component
 
     protected $rules = [
         'title' => 'required|string|max:50',
-        'description' => 'required|string|max:1000',
+        'description' => 'nullable|string|max:1000',
         'reminder_at' => 'nullable|date',
     ];
 
     protected $editRules = [
         'editTitle' => 'required|string|max:50',
-        'editDescription' => 'required|string|max:1000',
+        'editDescription' => 'nullable|string|max:1000',
         'editReminderAt' => 'nullable|date',
     ];
 
@@ -46,12 +46,21 @@ class TodoList extends Component
             'description' => $this->description,
             'completed' => false,
             'reminder_at' => $this->reminder_at ? Carbon::parse($this->reminder_at) : null,
-        ]);
-
-        $this->reset(['title', 'description', 'reminder_at']);
-        $this->showAddForm = false;
-        $this->loadTodos();
+            ]);
+            
+            $this->reset(['title', 'description', 'reminder_at']);
+            $this->showAddForm = false;
+            $this->loadTodos();
+            $this->editingTodoId = null;
+            $this->editingTodoId = false;
     }
+
+    public function updatedShowAddForm()
+{
+    if ($this->showAddForm) {
+        $this->editingTodoId = null;
+    }
+}
 
     public function toggleCompleted($id)
 {
@@ -69,17 +78,21 @@ class TodoList extends Component
         $this->loadTodos();
     }
 
-    public function startEdit($id)
-    {
+public function startEdit($id)
+{
+    if ($this->editingTodoId === $id) {
+        $this->cancelEdit();
+    } else {
         $todo = Todo::find($id);
         if ($todo) {
             $this->editingTodoId = $id;
             $this->editTitle = $todo->title;
             $this->editDescription = $todo->description;
             $this->editReminderAt = $todo->reminder_at ? $todo->reminder_at->format('Y-m-d\TH:i') : '';
+            $this->showAddForm = false;
         }
     }
-
+}
     public function updateTodo()
     {
         $this->validate($this->editRules);
@@ -93,6 +106,7 @@ class TodoList extends Component
             ]);
             $this->cancelEdit();
             $this->loadTodos();
+            $this->showAddForm = false;
         }
     }
 public function refreshTodos()
@@ -119,6 +133,7 @@ public function markAsCompletedFromNotification($id)
     if ($todo) {
         $todo->completed = true;
         $todo->save();
+        $this->refreshTodos();
     }
 }
 
