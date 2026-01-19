@@ -6,11 +6,6 @@ use Livewire\Component;
 use App\Models\Todo;
 use Carbon\Carbon;
 
-/**
- * @method static \Illuminate\Contracts\Auth\Authenticatable|null user()
- * @method static bool check()
- */
-
 class TodoList extends Component
 {
     public $title = '';
@@ -46,7 +41,6 @@ public function addTodo()
 {
     $this->validate();
 
-    // Simpan todo dengan mengaitkan ke user yang sedang login
     auth()->user()->todos()->create([
         'title' => $this->title,
         'description' => $this->description,
@@ -54,12 +48,10 @@ public function addTodo()
         'reminder_at' => $this->reminder_at ? Carbon::parse($this->reminder_at) : null,
     ]);
 
-    // Reset form
     $this->reset(['title', 'description', 'reminder_at']);
     $this->showAddForm = false;
-    $this->editingTodoId = null; // cukup sekali, hapus baris " = false"
+    $this->editingTodoId = null;
 
-    // Muat ulang hanya todo milik user ini
     $this->loadTodos();
 }
 
@@ -145,17 +137,12 @@ public function markAsCompletedFromNotification($id)
     }
 }
 
-// protected function loadTodos()
-// {
-//     $this->todos = Todo::orderBy('created_at', 'desc')->get();
-// }
-
 protected function loadTodos()
 {
     if (auth()->check()) {
         $this->todos = auth()->user()->todos()->orderBy('created_at', 'desc')->get();
     } else {
-        $this->todos = collect(); // kosongkan jika belum login
+        $this->todos = collect();
     }
 }
 
