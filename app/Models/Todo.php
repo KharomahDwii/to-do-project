@@ -24,7 +24,6 @@ class Todo extends Model
         'notified' => 'boolean',
     ];
 
-    // Relasi ke user (WAJIB untuk multi-user)
     public function user()
     {
         return $this->belongsTo(\App\Models\User::class);
