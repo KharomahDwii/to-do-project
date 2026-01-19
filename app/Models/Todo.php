@@ -9,11 +9,24 @@ class Todo extends Model
 {
     use HasFactory;
 
-protected $fillable = ['title', 'description', 'completed', 'reminder_at', 'notified'];
+    protected $fillable = [
+        'title',
+        'description',
+        'completed',
+        'reminder_at',
+        'notified',
+        'user_id'
+    ];
 
-protected $casts = [
-    'reminder_at' => 'datetime',
-    'completed' => 'boolean',
-    'notified' => 'boolean',
-];
+    protected $casts = [
+        'reminder_at' => 'datetime',
+        'completed' => 'boolean',
+        'notified' => 'boolean',
+    ];
+
+    // Relasi ke user (WAJIB untuk multi-user)
+    public function user()
+    {
+        return $this->belongsTo(\App\Models\User::class);
+    }
 }

@@ -6,6 +6,11 @@ use Livewire\Component;
 use App\Models\Todo;
 use Carbon\Carbon;
 
+/**
+ * @method static \Illuminate\Contracts\Auth\Authenticatable|null user()
+ * @method static bool check()
+ */
+
 class TodoList extends Component
 {
     public $title = '';
@@ -37,23 +42,26 @@ class TodoList extends Component
         $this->loadTodos();
     }
 
-    public function addTodo()
-    {
-        $this->validate();
+public function addTodo()
+{
+    $this->validate();
 
-        Todo::create([
-            'title' => $this->title,
-            'description' => $this->description,
-            'completed' => false,
-            'reminder_at' => $this->reminder_at ? Carbon::parse($this->reminder_at) : null,
-            ]);
-            
-            $this->reset(['title', 'description', 'reminder_at']);
-            $this->showAddForm = false;
-            $this->loadTodos();
-            $this->editingTodoId = null;
-            $this->editingTodoId = false;
-    }
+    // Simpan todo dengan mengaitkan ke user yang sedang login
+    auth()->user()->todos()->create([
+        'title' => $this->title,
+        'description' => $this->description,
+        'completed' => false,
+        'reminder_at' => $this->reminder_at ? Carbon::parse($this->reminder_at) : null,
+    ]);
+
+    // Reset form
+    $this->reset(['title', 'description', 'reminder_at']);
+    $this->showAddForm = false;
+    $this->editingTodoId = null; // cukup sekali, hapus baris " = false"
+
+    // Muat ulang hanya todo milik user ini
+    $this->loadTodos();
+}
 
     public function updatedShowAddForm()
 {
@@ -137,9 +145,18 @@ public function markAsCompletedFromNotification($id)
     }
 }
 
+// protected function loadTodos()
+// {
+//     $this->todos = Todo::orderBy('created_at', 'desc')->get();
+// }
+
 protected function loadTodos()
 {
-    $this->todos = Todo::orderBy('created_at', 'desc')->get();
+    if (auth()->check()) {
+        $this->todos = auth()->user()->todos()->orderBy('created_at', 'desc')->get();
+    } else {
+        $this->todos = collect(); // kosongkan jika belum login
+    }
 }
 
 protected $listeners = [

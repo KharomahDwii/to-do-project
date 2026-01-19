@@ -12,11 +12,14 @@ return new class extends Migration
     public function up()
 {
     Schema::create('todos', function (Blueprint $table) {
-        $table->id();
-        $table->string('title');
-        $table->boolean('completed')->default(false);
-        $table->timestamps();
-    });
+    $table->id();
+    $table->foreignId('user_id')->constrained()->onDelete('cascade');
+    $table->string('title', 50);
+    $table->text('description')->nullable();
+    $table->boolean('completed')->default(false);
+    $table->dateTime('reminder_at')->nullable();
+    $table->timestamps();
+});
 }
     /**
      * Reverse the migrations.

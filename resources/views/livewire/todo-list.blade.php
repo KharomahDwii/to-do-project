@@ -1,11 +1,22 @@
+<div style="top: 20px; left: 12px; z-index: 50;">
+    <form method="POST" action="{{ route('logout') }}" style="display: inline;">
+        @csrf
+        <button
+            type="submit"
+            style="background: linear-gradient(to right, #262a46, #141945); color: #ffffff; font-weight: bold; border-radius: 50px; padding: 8px 18px; font-size: 0.75rem; border: none; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.2);"
+            onclick="return confirm('Keluar dari akun?')"
+        >
+            Logout
+        </button>
+    </form>
     <div class="max-w-7xl mx-auto p-6">
     <h1 class="text-3xl md:text-5xl font-bold text-center mb-6" style="color: #ffffff;">
             TO DO LIST
         </h1>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
+        
         <div class="shadow-lg bg-brown rounded-3xl { border-radius: 10px } border-none focus:outline-none focus:ring-2 focus:ring-beige"
-     style="background-color: #ffffff; color: #48281c; font-weight: bold; border-radius: 20px; padding: 12px 0; p-6 text-beige;">
+     style="background-color: #131e3f; color: #ffffff; font-weight: bold; border-radius: 20px; padding: 12px 0; p-6 text-beige;">
             <ul class="space-y-4">
                 @forelse($todos as $todo)
                     <li class="flex items-center justify-between p-4 bg-beige/20 rounded-xl"
@@ -21,16 +32,16 @@
                             <div>
                                 <div class="font-medium" style="{{ $todo->completed ? 'text-decoration: line-through; color: #000000;' : '' }}">
                         {{ $todo->title }}
-                        </div>
-                                <div class="text-xs text-beige/70">
-                            @if($todo->description)
-                    <small class="d-block mt-0.09 opacity-75" style="font-size: 0.85rem; color: #000000; word-wrap: break-word; font-style: italic; max-width: 100%; display: block;" >
-            <div class="font-medium" style="{{ $todo->completed ? 'text-decoration: line-through; color: #000000;' : '' }}">
-    {{ $todo->description }}
-</div>
-        </small>
-    @endif
-        <small class="d-block mt-0.09 opacity-75" style="font-size: 0.8rem; font-style: italic;">
+                    </div>
+                    <div class="text-xs text-beige/70">
+                        @if($todo->description)
+                        <small class="d-block mt-0.09 opacity-75" style="font-size: 0.85rem; color: #dadfff; word-wrap: break-word; font-style: italic; max-width: 100%; display: block;" >
+                            <div class="font-medium" style="{{ $todo->completed ? 'text-decoration: line-through; color: #000000;' : '' }}">
+                                {{ $todo->description }}
+                            </div>
+                        </small>
+                        @endif
+                        <small class="d-block mt-0.09 opacity-75" style="font-size: 0.8rem; font-style: italic;">
                 📅 {{ $todo->created_at->format('d/m/Y H:i | ') }}
                     @if($todo->reminder_at)
                         ⏰ {{ $todo->reminder_at->format('d/m/Y H:i | ') }}
@@ -50,14 +61,14 @@
                         <div class="flex space-x-2">
                             <button
                                 wire:click="startEdit({{ $todo->id }})"
-                                class="btn btn-sm" style="background-color: #4194d4; color: white; width: 28px; height: 28px; border-radius: 20%; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 1px 6px rgb(0, 0, 0);"
+                                class="btn btn-sm" style="background-color: #ffffff; color: white; width: 28px; height: 28px; border-radius: 20%; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 1px 6px rgb(0, 0, 0);"
                                 >
                                 ✏️
                             </button>
                             <button
                             wire:click="deleteTodo({{ $todo->id }})"
                             wire:confirm="Hapus tugas ini?"
-                            class="btn btn-sm" style="background-color: #ff92b4; color: white; width: 28px; height: 28px; border-radius: 20%; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 1px 6px rgb(0, 0, 0);"
+                            class="btn btn-sm" style="background-color: #ffffff; color: white; width: 28px; height: 28px; border-radius: 20%; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 1px 6px rgb(0, 0, 0);"
                             >
                                 🗑️
                             </button>
@@ -72,7 +83,7 @@
             <button
                 wire:click="$toggle('showAddForm')"
                 class="w-full flex items-center justify-center gap-2 bg-beige text-brown font-medium py-3 px-4 rounded-full hover:bg-beige/80 transition"
-                style="background-color: #ffffff; color: #724e6c; font-weight: bold; border-radius: 50px; padding: 12px 0;"
+                style="background-color: #131e3f; color: #ffffff; border-radius: 50px; padding: 12px 0;"
                 >
                 Tambahkan kegiatan
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -81,7 +92,7 @@
             </button>
 
             @if($showAddForm)
-                <div class="p-6 rounded-3xl shadow-lg" style="background-color: #ffffff; color: #303756;">
+                <div class="p-6 rounded-3xl shadow-lg" style="background-color: #131e3f; color: #ffffff;">
                     <div class="bg-brown rounded-3xl p-6 shadow-lg">
                         <h3 class="text-xl font-semibold mb-4">Tambah kegiatan</h3>
                     <div class="mb-4">
@@ -92,7 +103,7 @@
                             class="w-full p-3 bg-beige/30 text-beige rounded-full {
                             border-radius: 10px
                             } border-none focus:outline-none focus:ring-2 focus:ring-beige"
-                            style="background-color: #b8c9ee; color: #3a425e; font-weight: bold; border-radius: 10px; padding: 12px 16px;">
+                            style="background-color: #ffffff; color: #171f3b; font-weight: bold; border-radius: 10px; padding: 12px 16px;">
                         @error('title') <span class="text-red-400 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div class="mb-4">
@@ -100,7 +111,7 @@
                     wire:model="description"
                     placeholder="Deskripsi (Opsional)"
                         class="w-full py-3 px-0 rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-[#3a425e] resize-none font-bold"
-                        style="background-color: #b8c9ee; color: #3a425e; padding: 12px 16px;"
+                        style="background-color: #ffffff; color: #171f3c; padding: 12px 16px;"
                     rows="3">
                 </textarea>
                         @error('description') 
@@ -115,7 +126,7 @@
                             class="flex-grow p-3 bg-beige/30 text-beige rounded-full {
                             border-radius: 10px
                             } border-none focus:outline-none focus:ring-2 focus:ring-beige"
-                            style="background-color: #b8c9ee; color: #3a425e; font-weight: bold; border-radius: 10px; padding: 12px 16px;" 
+                            style="background-color: #ffffff; color: #17203f; font-weight: bold; border-radius: 10px; padding: 12px 16px;" 
                         >
                     </div>
                     <div class="flex justify-between">
@@ -136,7 +147,7 @@
             @endif
 
             @if($editingTodoId)
-            <div class="p-6 rounded-3xl shadow-lg" style="background-color: #ffffff; color: #cb829c;">
+            <div class="p-6 rounded-3xl shadow-lg" style="background-color: #131e3f; color: #ffffff;">
                 <div class="bg-brown rounded-3xl p-6 shadow-lg">
                     <h3 class="text-xl font-semibold mb-4 text-beige">Edit List</h3>
                     <div class="mb-4">
@@ -147,7 +158,7 @@
                             class="w-full p-3 bg-beige/30 text-beige rounded-full {
                             border-radius: 10px
                             } border-none focus:outline-none focus:ring-2 focus:ring-beige"
-                            style="background-color: #eeb8c9; color: #754e5a; font-weight: bold; border-radius: 10px; padding: 12px 16px;">
+                            style="background-color: #ffffff; color: #13163f; font-weight: bold; border-radius: 10px; padding: 12px 16px;">
                         @error('editTitle') <span class="text-red-400 text-sm">{{ $message }}</span> @enderror
                     </div>
 
@@ -156,7 +167,7 @@
                             wire:model="editDescription"
                             placeholder="  Deskripsi"
                             class="w-full py-3 px-0 rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-[#3a425e] resize-none font-bold"
-                            style="background-color: #eeb8c9; color: #754e5a; padding: 12px 16px; backdrop-filter: blur(10px);"
+                            style="background-color: #ffffff; color: #121438; padding: 12px 16px; backdrop-filter: blur(10px);"
                             rows="3"
                             ></textarea>
                                 @error('editDescription') 
@@ -171,7 +182,7 @@
                             class="flex-grow p-3 bg-beige/30 text-beige rounded-full {
                             border-radius: 10px
                             } border-none focus:outline-none focus:ring-2 focus:ring-beige"
-                            style="background-color: #eeb8c9; color: #754e5a; font-weight: bold; border-radius: 10px; padding: 12px 16px;">
+                            style="background-color: #ffffff; color: #141b49; font-weight: bold; border-radius: 10px; padding: 12px 16px;">
                     </div>
                     <div class="flex justify-between">
                         <button
