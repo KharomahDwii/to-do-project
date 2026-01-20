@@ -109,10 +109,16 @@ public function startEdit($id)
             $this->showAddForm = false;
         }
     }
-public function refreshTodos()
+
+    public function refreshTodos()
 {
-    $this->todos = \App\Models\Todo::orderBy('created_at', 'desc')->get();
+    if (auth()->check()) {
+        $this->todos = auth()->user()->todos()->orderBy('created_at', 'desc')->get();
+    } else {
+        $this->todos = collect();
+    }
 }
+
     public function cancelEdit()
     {
         $this->editingTodoId = null;
