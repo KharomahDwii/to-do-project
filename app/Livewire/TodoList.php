@@ -37,8 +37,8 @@ class TodoList extends Component
         $this->loadTodos();
     }
 
-public function addTodo()
-{
+    public function addTodo()
+    {
     $this->validate();
 
     auth()->user()->todos()->create([
@@ -77,7 +77,6 @@ public function deleteTodo($id)
     $todo = auth()->user()->todos()->findOrFail($id);
     $todo->delete();
 
-    // Refresh data
     $this->loadTodos();
 }
 
