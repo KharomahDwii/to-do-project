@@ -79,129 +79,129 @@
 @endforelse
 </ul>
 </div>
-        <div class="space-y-6">
-            <button
-                wire:click="$toggle('showAddForm')"
-                class="w-full flex items-center justify-center gap-2 bg-beige text-brown font-medium py-3 px-4 rounded-full hover:bg-beige/80 transition"
-                style="background-color: #131e3f; color: #ffffff; border-radius: 50px; padding: 12px 0;"
-                >
-                Tambahkan kegiatan
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.404-1.404a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.596-8.596z" />
-                </svg>
-            </button>
+<div class="space-y-6">
+    <button
+    wire:click="$toggle('showAddForm')"
+    class="w-full flex items-center justify-center gap-2 bg-beige text-brown font-medium py-3 px-4 rounded-full hover:bg-beige/80 transition"
+    style="background-color: #131e3f; color: #ffffff; border-radius: 50px; padding: 12px 0;"
+    >
+    Tambahkan kegiatan
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.404-1.404a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.596-8.596z" />
+    </svg>
+</button>
 
-            @if($showAddForm)
-                <div class="p-6 rounded-3xl shadow-lg" style="background-color: #131e3f; color: #ffffff;">
-                    <div class="bg-brown rounded-3xl p-6 shadow-lg">
-                        <h3 class="text-xl font-semibold mb-4">Tambah kegiatan</h3>
-                    <div class="mb-4">
-                        <input
-                            type="text"
-                            wire:model="title"
-                            placeholder="Masukan Text"
-                            class="w-full p-3 bg-beige/30 text-beige rounded-full {
-                            border-radius: 10px
-                            } border-none focus:outline-none focus:ring-2 focus:ring-beige"
-                            style="background-color: #ffffff; color: #171f3b; font-weight: bold; border-radius: 10px; padding: 12px 16px;">
-                        @error('title') <span class="text-red-400 text-sm">{{ $message }}</span> @enderror
-                    </div>
-                    <div class="mb-4">
-                    <textarea
-                    wire:model="description"
-                    placeholder="Deskripsi (Opsional)"
-                        class="w-full py-3 px-0 rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-[#3a425e] resize-none font-bold"
-                        style="background-color: #ffffff; color: #171f3c; padding: 12px 16px;"
-                    rows="3">
-                </textarea>
-                        @error('description')
-                        <small class="text-red-400 mt-1 d-block" style="padding: 12px 16px;">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    <div class="mb-4 flex items-center gap-2">
-                        <input
-                            type="datetime-local"
-                            wire:model="reminder_at"
-                            class="flex-grow p-3 bg-beige/30 text-beige rounded-full {
-                            border-radius: 10px
-                            } border-none focus:outline-none focus:ring-2 focus:ring-beige"
-                            style="background-color: #ffffff; color: #17203f; font-weight: bold; border-radius: 10px; padding: 12px 16px;"
-                        >
-                    </div>
-                    <div class="flex justify-between">
-                        <button
-                            wire:click="cancelAddForm"
-                            class="px-6 py-2 bg-beige/30 text-beige rounded-full hover:bg-beige/50 transition"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            wire:click="addTodo"
-                            class="px-6 py-2 bg-beige text-brown rounded-full hover:bg-beige/80 transition font-medium"
-                        >
-                            Create
-                        </button>
-                    </div>
-                </div>
-            @endif
-
-            @if($editingTodoId)
-            <div class="p-6 rounded-3xl shadow-lg" style="background-color: #131e3f; color: #ffffff;">
-                <div class="bg-brown rounded-3xl p-6 shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4 text-beige">Edit List</h3>
-                    <div class="mb-4">
-                        <input
-                            type="text"
-                            wire:model="editTitle"
-                            placeholder="  Masukan text"
-                            class="w-full p-3 bg-beige/30 text-beige rounded-full {
-                            border-radius: 10px
-                            } border-none focus:outline-none focus:ring-2 focus:ring-beige"
-                            style="background-color: #ffffff; color: #13163f; font-weight: bold; border-radius: 10px; padding: 12px 16px;">
-                        @error('editTitle') <span class="text-red-400 text-sm">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="mb-4">
-                        <textarea
-                            wire:model="editDescription"
-                            placeholder="  Deskripsi"
-                            class="w-full py-3 px-0 rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-[#3a425e] resize-none font-bold"
-                            style="background-color: #ffffff; color: #121438; padding: 12px 16px; backdrop-filter: blur(10px);"
-                            rows="3"
-                            ></textarea>
-                                @error('editDescription')
-                            <small class="text-red-400 mt-1 d-block">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    <div class="mb-4 flex items-center gap-2">
-                        <input
-                            type="datetime-local"
-                            wire:model="editReminderAt"
-                            class="flex-grow p-3 bg-beige/30 text-beige rounded-full {
-                            border-radius: 10px
-                            } border-none focus:outline-none focus:ring-2 focus:ring-beige"
-                            style="background-color: #ffffff; color: #141b49; font-weight: bold; border-radius: 10px; padding: 12px 16px;">
-                    </div>
-                    <div class="flex justify-between">
-                        <button
-                            wire:click="cancelEdit"
-                            class="px-6 py-2 bg-beige/30 text-beige rounded-full hover:bg-beige/50 transition"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            wire:click="updateTodo"
-                            class="px-6 py-2 bg-beige text-brown rounded-full hover:bg-beige/80 transition font-medium"
-                        >
-                            Update
-                        </button>
-                    </div>
-                </div>
-            @endif
+@if($showAddForm)
+<div class="p-6 rounded-3xl shadow-lg" style="background-color: #131e3f; color: #ffffff;">
+    <div class="bg-brown rounded-3xl p-6 shadow-lg">
+        <h3 class="text-xl font-semibold mb-4">Tambah kegiatan</h3>
+        <div class="mb-4">
+            <input
+            type="text"
+            wire:model="title"
+            placeholder="Masukan Text"
+            class="w-full p-3 bg-beige/30 text-beige rounded-full {
+            border-radius: 10px
+            } border-none focus:outline-none focus:ring-2 focus:ring-beige"
+            style="background-color: #ffffff; color: #171f3b; font-weight: bold; border-radius: 10px; padding: 12px 16px;">
+            @error('title') <span class="text-red-400 text-sm">{{ $message }}</span> @enderror
         </div>
+        <div class="mb-4">
+            <textarea
+            wire:model="description"
+            placeholder="Deskripsi (Opsional)"
+            class="w-full py-3 px-0 rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-[#3a425e] resize-none font-bold"
+            style="background-color: #ffffff; color: #171f3c; padding: 12px 16px;"
+            rows="3">
+        </textarea>
+        @error('description')
+        <small class="text-red-400 mt-1 d-block" style="padding: 12px 16px;">{{ $message }}</small>
+        @enderror
     </div>
+
+    <div class="mb-4 flex items-center gap-2">
+        <input
+        type="datetime-local"
+        wire:model="reminder_at"
+        class="flex-grow p-3 bg-beige/30 text-beige rounded-full {
+        border-radius: 10px
+        } border-none focus:outline-none focus:ring-2 focus:ring-beige"
+        style="background-color: #ffffff; color: #17203f; font-weight: bold; border-radius: 10px; padding: 12px 16px;"
+        >
+    </div>
+    <div class="flex justify-between">
+        <button
+        wire:click="cancelAddForm"
+        class="px-6 py-2 bg-beige/30 text-beige rounded-full hover:bg-beige/50 transition"
+        >
+        Cancel
+    </button>
+    <button
+    wire:click="addTodo"
+    class="px-6 py-2 bg-beige text-brown rounded-full hover:bg-beige/80 transition font-medium"
+    >
+    Create
+</button>
+</div>
+</div>
+@endif
+
+@if($editingTodoId)
+<div class="p-6 rounded-3xl shadow-lg" style="background-color: #131e3f; color: #ffffff;">
+    <div class="bg-brown rounded-3xl p-6 shadow-lg">
+        <h3 class="text-xl font-semibold mb-4 text-beige">Edit List</h3>
+        <div class="mb-4">
+            <input
+            type="text"
+            wire:model="editTitle"
+            placeholder="  Masukan text"
+            class="w-full p-3 bg-beige/30 text-beige rounded-full {
+            border-radius: 10px
+            } border-none focus:outline-none focus:ring-2 focus:ring-beige"
+            style="background-color: #ffffff; color: #13163f; font-weight: bold; border-radius: 10px; padding: 12px 16px;">
+            @error('editTitle') <span class="text-red-400 text-sm">{{ $message }}</span> @enderror
+        </div>
+
+        <div class="mb-4">
+            <textarea
+            wire:model="editDescription"
+            placeholder="  Deskripsi"
+            class="w-full py-3 px-0 rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-[#3a425e] resize-none font-bold"
+            style="background-color: #ffffff; color: #121438; padding: 12px 16px; backdrop-filter: blur(10px);"
+            rows="3"
+            ></textarea>
+            @error('editDescription')
+            <small class="text-red-400 mt-1 d-block">{{ $message }}</small>
+            @enderror
+        </div>
+
+        <div class="mb-4 flex items-center gap-2">
+            <input
+            type="datetime-local"
+            wire:model="editReminderAt"
+            class="flex-grow p-3 bg-beige/30 text-beige rounded-full {
+            border-radius: 10px
+            } border-none focus:outline-none focus:ring-2 focus:ring-beige"
+            style="background-color: #ffffff; color: #141b49; font-weight: bold; border-radius: 10px; padding: 12px 16px;">
+        </div>
+        <div class="flex justify-between">
+            <button
+            wire:click="cancelEdit"
+            class="px-6 py-2 bg-beige/30 text-beige rounded-full hover:bg-beige/50 transition"
+            >
+            Cancel
+        </button>
+        <button
+        wire:click="updateTodo"
+        class="px-6 py-2 bg-beige text-brown rounded-full hover:bg-beige/80 transition font-medium"
+        >
+        Update
+    </button>
+</div>
+</div>
+@endif
+</div>
+</div>
 </div>
 
 @push('styles')
