@@ -1,295 +1,434 @@
-<div style="top: 20px; left: 12px; z-index: 50;">
-    <form method="POST" action="{{ route('logout') }}" style="display: inline;">
-        @csrf
-        <button
-        type="submit"
-        style="background: linear-gradient(to right, #262a46, #141945); color: #ffffff; font-weight: bold; border-radius: 50px; padding: 8px 18px; font-size: 0.75rem; border: none; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.2);"
-        onclick="return confirm('Keluar dari akun?')"
-        >
-        Logout
-    </button>
-</form>
-<div class="max-w-7xl mx-auto p-6">
-    <h1 class="text-3xl md:text-5xl font-bold text-center mb-6" style="color: #ffffff;">
-        TO DO LIST
-    </h1>
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<div style="background-color: #13162d; color: #ffffff; border-radius: 20px; min-height: 100vh; font-family: Arial, sans-serif; padding: 0; margin: 0;">
+    <style>
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.85) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes popOut {
+            from { opacity: 1; transform: scale(1) translateY(0); }
+            to { opacity: 0; transform: scale(0.85) translateY(10px); }
+        }
+        #logoutModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        #logoutModal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        #logoutModal .modal-content {
+            background-color: #131e3f;
+            color: white;
+            padding: 2rem;
+            border-radius: 16px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            opacity: 0;
+            transform: scale(0.85) translateY(10px);
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #logoutModal.active .modal-content {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+        .delete-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .delete-modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .delete-modal .modal-content {
+            background-color: #131e3f;
+            color: white;
+            padding: 2rem;
+            border-radius: 16px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            opacity: 0;
+            transform: scale(0.85) translateY(10px);
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .delete-modal.active .modal-content {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
 
-        <div class="shadow-lg bg-brown rounded-3xl { border-radius: 10px } border-none focus:outline-none focus:ring-2 focus:ring-beige"
-     style="background-color: #131e3f; color: #ffffff; font-weight: bold; border-radius: 20px; padding: 12px 0; p-6 text-beige;">
-     <ul class="space-y-4">
-        @forelse($todos as $todo)
-        <li class="flex items-center justify-between p-4 bg-beige/20 rounded-xl"
-        data-todo-id="{{ $todo->id }}"
-        data-reminder="{{ $todo->reminder_at ? $todo->reminder_at->format('Y-m-d\TH:i:s') : '' }}"
-        data-title="{{ $todo->title }}">
-        <div class="flex items-center space-x-3 flex-grow">
-            <input
-            type="checkbox"
-            class="me-2 form-check-input"
-            wire:change="toggleCompleted({{ $todo->id }})"
-            {{ $todo->completed ? 'checked' : '' }}>
-            <div>
-                <div class="font-medium" style="{{ $todo->completed ? 'text-decoration: line-through; color: #000000;' : '' }}">
-                    {{ $todo->title }}
-                </div>
-                <div class="text-xs text-beige/70">
-                    @if($todo->description)
-                    <small class="d-block mt-0.09 opacity-75" style="font-size: 0.85rem; color: #dadfff; word-wrap: break-word; font-style: italic; max-width: 100%; display: block;" >
-                        <div class="font-medium" style="{{ $todo->completed ? 'text-decoration: line-through; color: #000000;' : '' }}">
-                            {{ $todo->description }}
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #10b981; /* hijau sukses */
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 3000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+    <div style="position: absolute; top: 20px; left: 12px; z-index: 50;">
+        <button onclick="document.getElementById('logoutModal').classList.add('active');"
+                style="background: linear-gradient(to right, #262a46, #141945); color: #ffffff; font-weight: bold; border-radius: 50px; padding: 8px 18px; font-size: 0.75rem; border: none; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.2);">
+            Logout
+        </button>
+    </div>
+
+    <div style="max-width: 1280px; margin: 0 auto; padding: 2rem;">
+        <h1 style="text-align: center; font-size: 2.5rem; font-weight: bold; margin-bottom: 1.5rem; color: #ffffff;">
+            TO DO LIST
+        </h1>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <div style="background-color: #131e3f; border-radius: 20px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                <h2 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem; text-align: center;">Daftar Kegiatan</h2>
+                <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 1rem;">
+
+                    @forelse($todos as $todo)
+                        <li wire:key="todo-{{ $todo->id }}"
+                            style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background-color: rgba(218, 223, 255, 0.1); border-radius: 12px; transition: all 0.2s;"
+                            data-todo-id="{{ $todo->id }}"
+                            data-reminder="{{ $todo->reminder_at ? $todo->reminder_at->format('Y-m-d\TH:i:s') : '' }}"
+                            data-title="{{ $todo->title }}">
+
+                            <div style="display: flex; align-items: center; gap: 0.75rem; flex-grow: 1;">
+                                <input type="checkbox"
+                                       wire:change="toggleCompleted({{ $todo->id }})"
+                                       {{ $todo->completed ? 'checked' : '' }}
+                                       style="width: 18px; height: 18px; margin: 0; accent-color: #ffffff;">
+
+                                <div>
+                                    <div style="font-weight: 600; {{ $todo->completed ? 'text-decoration: line-through; color: #000000;' : '' }}">
+                                        {{ $todo->title }}
+                                    </div>
+                                    @if($todo->description)
+                                        <div style="font-size: 0.8rem; font-style: italic; opacity: 0.75; color: #dadfff; margin-top: 0.25rem; word-wrap: break-word; overflow-wrap: break-word; max-width: 50ch;">
+                                            {{ $todo->description }}
+                                        </div>
+                                    @endif
+                                    <div style="font-size: 0.8rem; font-style: italic; opacity: 0.75; color: #dadfff; margin-top: 0.25rem;">
+                                        📅 {{ $todo->created_at->format('d/m/Y H:i') }}
+                                        @if($todo->reminder_at)
+                                            ⏰ {{ $todo->reminder_at->format('d/m/Y H:i') }}
+                                            @if(now()->gt($todo->reminder_at) && !$todo->completed)
+                                                <span style="background-color: #fbbf24; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; margin-left: 0.25rem;">
+                                                    Waktu terlewat!
+                                                </span>
+                                            @endif
+                                        @endif
+                                    </div>
+                                    @if($todo->completed)
+                                        <div style="font-size: 0.8rem; font-style: italic; opacity: 0.75; color: #dadfff; margin-top: 0.25rem;">
+                                            Telah Dikerjakan
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button wire:click="startEdit({{ $todo->id }})"
+                                        style="background-color: #ffffff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 1px 6px rgb(0, 0, 0); border: none; cursor: pointer; font-size: 0.8rem;">
+                                    ✏️
+                                </button>
+                                <button onclick="openDeleteModal({{ $todo->id }}, '{{ addslashes($todo->title) }}')"
+                                        style="background-color: #ffffff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 1px 6px rgb(0, 0, 0); border: none; cursor: pointer; font-size: 0.8rem;">
+                                    🗑️
+                                </button>
+                            </div>
+                        </li>
+                    @empty
+                        <li style="text-align: center; padding: 2rem; color: rgba(218, 223, 255, 0.7); font-style: italic;">
+                            Belum ada kegiatan.
+                        </li>
+                    @endforelse
+                </ul>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+                <button wire:click="$toggle('showAddForm')"
+                        style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background-color: #131e3f; color: #ffffff; font-weight: bold; border-radius: 50px; padding: 12px 0; border: none; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    Tambahkan kegiatan
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.404-1.404a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.596-8.596z" />
+                    </svg>
+                </button>
+
+                @if($showAddForm)
+                    <div style="background-color: #131e3f; border-radius: 20px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                        <h3 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem; text-align: center;">Tambah Kegiatan</h3>
+
+                        <div style="margin-bottom: 1rem;">
+                            <input type="text"
+                                   wire:model="title"
+                                   placeholder="Masukkan judul kegiatan"
+                                   style="width: 100%; padding: 12px 16px; background-color: #ffffff; color: #171f3b; font-weight: bold; border-radius: 10px; border: none; box-sizing: border-box;">
+
+                            @error('title')
+                                <div style="color: #f87171; font-size: 0.875rem; margin-top: 0.25rem;">{{ $message }}</div>
+                            @enderror
                         </div>
-                    </small>
-                    @endif
-                    <small class="d-block mt-0.09 opacity-75" style="font-size: 0.8rem; font-style: italic;">
-                        📅 {{ $todo->created_at->format('d/m/Y H:i | ') }}
-                        @if($todo->reminder_at)
-                        ⏰ {{ $todo->reminder_at->format('d/m/Y H:i | ') }}
-                        @if(now()->gt($todo->reminder_at) && !$todo->completed)
-                        <span class="badge bg-warning text-dark ms-1"> Waktu terlewat!</span>
-                        @endif
-                        @endif
-                    </small>
-                    @if($todo->completed)
-                    <small class="d-block mt-0.09 opacity-75" style="font-size: 0.8rem; font-style: italic;">
-                        Telah Dikerjakan
-                    </small>
-                    @endif
-                </div>
+
+                        <div style="margin-bottom: 1rem;">
+                            <textarea wire:model="description"
+                                      placeholder="Deskripsi (opsional)"
+                                      rows="3"
+                                      style="width: 100%; padding: 12px 16px; background-color: #ffffff; color: #171f3c; font-weight: bold; border-radius: 10px; border: none; box-sizing: border-box; resize: vertical; min-height: 80px;"></textarea>
+                            @error('description')
+                                <div style="color: #f87171; font-size: 0.875rem; margin-top: 0.25rem;">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div style="margin-bottom: 1rem;">
+                            <input type="datetime-local"
+                                   wire:model="reminder_at"
+                                   style="width: 100%; padding: 12px 16px; background-color: #ffffff; color: #17203f; font-weight: bold; border-radius: 10px; border: none; box-sizing: border-box;">
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; margin-top: 1rem;">
+                            <button wire:click="cancelAddForm"
+                                    style="padding: 0.5rem 1.5rem; border-radius: 50px; border: none; cursor: pointer; font-weight: 600; background-color: rgba(218, 223, 255, 0.3); color: #ffffff;">
+                                Cancel
+                            </button>
+                            <button wire:click="addTodo"
+                                    style="padding: 0.5rem 1.5rem; border-radius: 50px; border: none; cursor: pointer; font-weight: 600; background-color: #566795; color: #ffffff;">
+                                Create
+                            </button>
+                        </div>
+                    </div>
+                @endif
+
+                @if($editingTodoId)
+                    <div style="background-color: #131e3f; border-radius: 20px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                        <h3 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem; text-align: center;">Edit Kegiatan</h3>
+
+                        <div style="margin-bottom: 1rem;">
+                            <input type="text"
+                                   wire:model="editTitle"
+                                   placeholder="Judul kegiatan"
+                                   style="width: 100%; padding: 12px 16px; background-color: #ffffff; color: #13163f; font-weight: bold; border-radius: 10px; border: none; box-sizing: border-box;">
+
+                            @error('editTitle')
+                                <div style="color: #f87171; font-size: 0.875rem; margin-top: 0.25rem;">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div style="margin-bottom: 1rem;">
+                            <textarea wire:model="editDescription"
+                                      placeholder="Deskripsi"
+                                      rows="3"
+                                      style="width: 100%; padding: 12px 16px; background-color: #ffffff; color: #121438; font-weight: bold; border-radius: 10px; border: none; box-sizing: border-box; resize: vertical; min-height: 80px;"></textarea>
+                            @error('editDescription')
+                                <div style="color: #f87171; font-size: 0.875rem; margin-top: 0.25rem;">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div style="margin-bottom: 1rem;">
+                            <input type="datetime-local"
+                                   wire:model="editReminderAt"
+                                   style="width: 100%; padding: 12px 16px; background-color: #ffffff; color: #141b49; font-weight: bold; border-radius: 10px; border: none; box-sizing: border-box;">
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; margin-top: 1rem;">
+                            <button wire:click="cancelEdit"
+                                    style="padding: 0.5rem 1.5rem; border-radius: 50px; border: none; cursor: pointer; font-weight: 600; background-color: rgba(218, 223, 255, 0.3); color: #ffffff;">
+                                Cancel
+                            </button>
+                            <button wire:click="updateTodo"
+                                    style="padding: 0.5rem 1.5rem; border-radius: 50px; border: none; cursor: pointer; font-weight: 600; background-color: #566795; color: #ffffff;">
+                                Update
+                            </button>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
-        <div class="flex space-x-2">
-            <button
-            wire:click="startEdit({{ $todo->id }})"
-            class="btn btn-sm" style="background-color: #ffffff; color: white; width: 28px; height: 28px; border-radius: 20%; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 1px 6px rgb(0, 0, 0);"
-            >
-            ✏️
-        </button>
-        <button
-        wire:click="deleteTodo({{ $todo->id }})"
-        wire:confirm="Hapus tugas ini?"
-        class="btn btn-sm" style="background-color: #ffffff; color: white; width: 28px; height: 28px; border-radius: 20%; display: flex; align-items: center; justify-content: center; padding: 0; box-shadow: 0 1px 6px rgb(0, 0, 0);"
-        >
-        🗑️
-    </button>
-</div>
-</li>
-@empty
-<li class="text-center py-8 text-beige/70">Belum ada kegiatan.</li>
-@endforelse
-</ul>
-</div>
-        <div class="space-y-6">
-            <button
-                wire:click="$toggle('showAddForm')"
-                class="w-full flex items-center justify-center gap-2 bg-beige text-brown font-medium py-3 px-4 rounded-full hover:bg-beige/80 transition"
-                style="background-color: #131e3f; color: #ffffff; border-radius: 50px; padding: 12px 0;"
-                >
-                Tambahkan kegiatan
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.404-1.404a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.596-8.596z" />
-                </svg>
-            </button>
+    </div>
 
-            @if($showAddForm)
-                <div class="p-6 rounded-3xl shadow-lg" style="background-color: #131e3f; color: #ffffff;">
-                    <div class="bg-brown rounded-3xl p-6 shadow-lg">
-                        <h3 class="text-xl font-semibold mb-4">Tambah kegiatan</h3>
-                    <div class="mb-4">
-                        <input
-                            type="text"
-                            wire:model="title"
-                            placeholder="Masukan Text"
-                            class="w-full p-3 bg-beige/30 text-beige rounded-full {
-                            border-radius: 10px
-                            } border-none focus:outline-none focus:ring-2 focus:ring-beige"
-                            style="background-color: #ffffff; color: #171f3b; font-weight: bold; border-radius: 10px; padding: 12px 16px;">
-                        @error('title') <span class="text-red-400 text-sm">{{ $message }}</span> @enderror
-                    </div>
-                    <div class="mb-4">
-                    <textarea
-                    wire:model="description"
-                    placeholder="Deskripsi (Opsional)"
-                        class="w-full py-3 px-0 rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-[#3a425e] resize-none font-bold"
-                        style="background-color: #ffffff; color: #171f3c; padding: 12px 16px;"
-                    rows="3">
-                </textarea>
-                        @error('description')
-                        <small class="text-red-400 mt-1 d-block" style="padding: 12px 16px;">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    <div class="mb-4 flex items-center gap-2">
-                        <input
-                            type="datetime-local"
-                            wire:model="reminder_at"
-                            class="flex-grow p-3 bg-beige/30 text-beige rounded-full {
-                            border-radius: 10px
-                            } border-none focus:outline-none focus:ring-2 focus:ring-beige"
-                            style="background-color: #ffffff; color: #17203f; font-weight: bold; border-radius: 10px; padding: 12px 16px;"
-                        >
-                    </div>
-                    <div class="flex justify-between">
-                        <button
-                            wire:click="cancelAddForm"
-                            class="px-6 py-2 bg-beige/30 text-beige rounded-full hover:bg-beige/50 transition"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            wire:click="addTodo"
-                            class="px-6 py-2 bg-beige text-brown rounded-full hover:bg-beige/80 transition font-medium"
-                        >
-                            Create
-                        </button>
-                    </div>
-                </div>
-            @endif
-
-            @if($editingTodoId)
-            <div class="p-6 rounded-3xl shadow-lg" style="background-color: #131e3f; color: #ffffff;">
-                <div class="bg-brown rounded-3xl p-6 shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4 text-beige">Edit List</h3>
-                    <div class="mb-4">
-                        <input
-                            type="text"
-                            wire:model="editTitle"
-                            placeholder="  Masukan text"
-                            class="w-full p-3 bg-beige/30 text-beige rounded-full {
-                            border-radius: 10px
-                            } border-none focus:outline-none focus:ring-2 focus:ring-beige"
-                            style="background-color: #ffffff; color: #13163f; font-weight: bold; border-radius: 10px; padding: 12px 16px;">
-                        @error('editTitle') <span class="text-red-400 text-sm">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="mb-4">
-                        <textarea
-                            wire:model="editDescription"
-                            placeholder="  Deskripsi"
-                            class="w-full py-3 px-0 rounded-xl border-none focus:outline-none focus:ring-2 focus:ring-[#3a425e] resize-none font-bold"
-                            style="background-color: #ffffff; color: #121438; padding: 12px 16px; backdrop-filter: blur(10px);"
-                            rows="3"
-                            ></textarea>
-                                @error('editDescription')
-                            <small class="text-red-400 mt-1 d-block">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    <div class="mb-4 flex items-center gap-2">
-                        <input
-                            type="datetime-local"
-                            wire:model="editReminderAt"
-                            class="flex-grow p-3 bg-beige/30 text-beige rounded-full {
-                            border-radius: 10px
-                            } border-none focus:outline-none focus:ring-2 focus:ring-beige"
-                            style="background-color: #ffffff; color: #141b49; font-weight: bold; border-radius: 10px; padding: 12px 16px;">
-                    </div>
-                    <div class="flex justify-between">
-                        <button
-                            wire:click="cancelEdit"
-                            class="px-6 py-2 bg-beige/30 text-beige rounded-full hover:bg-beige/50 transition"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            wire:click="updateTodo"
-                            class="px-6 py-2 bg-beige text-brown rounded-full hover:bg-beige/80 transition font-medium"
-                        >
-                            Update
-                        </button>
-                    </div>
-                </div>
-            @endif
+    <div id="logoutModal">
+        <div class="modal-content">
+            <h3 style="margin-top: 0; font-size: 1.25rem;">Konfirmasi Logout</h3>
+            <p>Apakah Anda yakin ingin keluar dari akun?</p>
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
+                <button onclick="document.getElementById('logoutModal').classList.remove('active');"
+                        style="padding: 0.5rem 1.5rem; border-radius: 50px; background-color: #4b5563; color: white; border: none; cursor: pointer;">
+                    Batal
+                </button>
+                <!-- ✅ Form POST dengan @csrf -->
+                <form method="POST" action="{{ route('logout') }}" style="display: inline;">
+                    @csrf
+                    <button type="submit"
+                            style="padding: 0.5rem 1.5rem; border-radius: 50px; background-color: #ef4444; color: white; border: none; cursor: pointer;">
+                        Keluar
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
-@push('styles')
-<style>
-    :root {
-        --color-brown: #6B4F4F;
-        --color-beige: #D9C7B8;
-    }
-    .bg-brown { background-color: var(--color-brown); }
-    .text-brown { color: var(--color-brown); }
-    .bg-beige { background-color: var(--color-beige); }
-    .text-beige { color: var(--color-beige); }
+    <div id="deleteModal" class="delete-modal">
+        <div class="modal-content">
+            <h3 style="margin-top: 0; font-size: 1.25rem;">Konfirmasi Hapus</h3>
+            <p>Apakah Anda yakin ingin menghapus kegiatan ini?</p>
+            <p style="font-weight: bold; margin: 0.5rem 0; color: #ff6b6b;" id="deleteModalTitle"></p>
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
+                <button onclick="closeDeleteModal()"
+                        style="padding: 0.5rem 1.5rem; border-radius: 50px; background-color: #4b5563; color: white; border: none; cursor: pointer;">
+                    Batal
+                </button>
+                <button onclick="confirmDeleteTodo()"
+                        style="padding: 0.5rem 1.5rem; border-radius: 50px; background-color: #ef4444; color: white; border: none; cursor: pointer;">
+                    Hapus
+                </button>
+            </div>
+        </div>
+    </div>
 
-</style>
-@endpush
+    <div id="toast" class="toast">Kegiatan berhasil dihapus!</div>
 
-@push('scripts')
-<script>
-document.addEventListener('livewire:initialized', () => {
-    if (Notification.permission === 'default') {
-        Notification.requestPermission();
-    }
+    @push('scripts')
+    <script>
+    document.addEventListener('livewire:initialized', () => {
+        if (Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
 
-    const checkReminders = () => {
-        document.querySelectorAll('li[data-todo-id]').forEach(el => {
-            const reminderStr = el.getAttribute('data-reminder');
-            const todoId = el.getAttribute('data-todo-id');
-            const title = el.getAttribute('data-title');
+        const checkReminders = () => {
+            document.querySelectorAll('li[data-todo-id]').forEach(el => {
+                const reminderStr = el.getAttribute('data-reminder');
+                const todoId = el.getAttribute('data-todo-id');
+                const title = el.getAttribute('data-title');
 
-            const checkbox = el.querySelector('input[type="checkbox"]');
-            const isCompleted = checkbox ? checkbox.checked : false;
+                const checkbox = el.querySelector('input[type="checkbox"]');
+                const isCompleted = checkbox ? checkbox.checked : false;
 
-            if (!reminderStr || isCompleted) return;
+                if (!reminderStr || isCompleted) return;
 
-            const now = new Date().getTime();
-            const remindAt = new Date(reminderStr).getTime();
-            const diff = remindAt - now;
+                const now = new Date().getTime();
+                const remindAt = new Date(reminderStr).getTime();
+                const diff = remindAt - now;
 
-            const fiveMinutesMs = 300 * 1000;
-            const oneMinuteMs = 60 * 1000;
+                const fiveMinutesMs = 300 * 1000;
+                const oneMinuteMs = 60 * 1000;
 
-            if (diff > 0 && diff <= fiveMinutesMs) {
-                const key = `notified_5min_${todoId}`;
-                if (!localStorage.getItem(key)) {
-                    sendBrowserNotification(title, "⏰ Sisa waktu 5 menit lagi!", todoId);
-                    localStorage.setItem(key, 'true');
+                if (diff > 0 && diff <= fiveMinutesMs) {
+                    const key = `notified_5min_${todoId}`;
+                    if (!localStorage.getItem(key)) {
+                        sendBrowserNotification(title, "⏰ Sisa waktu 5 menit lagi!", todoId);
+                        localStorage.setItem(key, 'true');
+                    }
                 }
-            }
 
                 if (diff > 0 && diff <= oneMinuteMs) {
-            const key = `notified_1min_${todoId}`;
-            if (!localStorage.getItem(key)) {
-                sendBrowserNotification(title, "⏰ Sisa waktu 1 menit lagi!", todoId);
-                localStorage.setItem(key, 'true');
-            }
-        }
-
-            if (diff <= 0) {
-                const key = `notified_exact_${todoId}`;
-                if (!localStorage.getItem(key)) {
-                    sendBrowserNotification(title, "Waktu tiba!",todoId);
-                    localStorage.setItem(key, 'true');
-
-                    Livewire.dispatch('refresh-todos');
+                    const key = `notified_1min_${todoId}`;
+                    if (!localStorage.getItem(key)) {
+                        sendBrowserNotification(title, "⏰ Sisa waktu 1 menit lagi!", todoId);
+                        localStorage.setItem(key, 'true');
+                    }
                 }
-            }
-        });
 
-        setTimeout(checkReminders, 5000);
-    };
-
-    function sendBrowserNotification(title, body) {
-        if (Notification.permission === "granted") {
-            const notification = new Notification(title, {
-                body: body,
-                icon: '/favicon.ico'
+                if (diff <= 0) {
+                    const key = `notified_exact_${todoId}`;
+                    if (!localStorage.getItem(key)) {
+                        sendBrowserNotification(title, "Waktu tiba!", todoId);
+                        localStorage.setItem(key, 'true');
+                        Livewire.dispatch('refresh-todos');
+                    }
+                }
             });
 
-            notification.onclick = function() {
-            window.focus();
-            notification.close();
+            setTimeout(checkReminders, 5000);
         };
-        }
-    }
-    checkReminders();
 
-    Livewire.on('refresh-todos', () => {
+        function sendBrowserNotification(title, body) {
+            if (Notification.permission === "granted") {
+                const notification = new Notification(title, {
+                    body: body,
+                    icon: '/favicon.ico'
+                });
+
+                notification.onclick = function() {
+                    window.focus();
+                    notification.close();
+                };
+            }
+        }
+
+        checkReminders();
+
+        Livewire.on('refresh-todos', () => {});
+
+        let currentDeleteId = null;
+
+        window.openDeleteModal = function(todoId, title) {
+            currentDeleteId = todoId;
+            document.getElementById('deleteModalTitle').textContent = title;
+            document.getElementById('deleteModal').classList.add('active');
+        };
+
+        window.closeDeleteModal = function() {
+            document.getElementById('deleteModal').classList.remove('active');
+            currentDeleteId = null;
+        };
+
+        window.confirmDeleteTodo = function() {
+            if (currentDeleteId !== null) {
+                const component = Livewire.find('{{ $this->getId() }}');
+                if (component) {
+                    component.call('deleteTodo', currentDeleteId).then(() => {
+                        const toast = document.getElementById('toast');
+                        toast.textContent = 'Kegiatan berhasil dihapus!';
+                        toast.style.backgroundColor = '#10b981';
+                        toast.classList.add('show');
+                        setTimeout(() => toast.classList.remove('show'), 3000);
+                        closeDeleteModal();
+                    }).catch(err => {
+                        const toast = document.getElementById('toast');
+                        toast.textContent = 'Gagal menghapus kegiatan.';
+                        toast.style.backgroundColor = '#ef4444';
+                        toast.classList.add('show');
+                        setTimeout(() => {
+                            toast.classList.remove('show');
+                            toast.textContent = 'Kegiatan berhasil dihapus!';
+                            toast.style.backgroundColor = '#10b981';
+                        }, 3000);
+                    });
+                }
+            }
+        };
     });
-});
-</script>
-@endpush
+    </script>
+    @endpush
+</div>

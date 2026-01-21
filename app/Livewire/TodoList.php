@@ -72,11 +72,14 @@ public function addTodo()
     }
 }
 
-    public function deleteTodo($id)
-    {
-        Todo::destroy($id);
-        $this->loadTodos();
-    }
+public function deleteTodo($id)
+{
+    $todo = auth()->user()->todos()->findOrFail($id);
+    $todo->delete();
+
+    // Refresh data
+    $this->loadTodos();
+}
 
 public function startEdit($id)
 {
