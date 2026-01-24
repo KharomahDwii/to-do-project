@@ -7,21 +7,22 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     public function up()
-    {
-        Schema::table('todos', function (Blueprint $table) {
-            // Tambahkan user_id sebagai nullable dulu
-            $table->foreignId('user_id')->nullable()->after('id');
+{
+    Schema::table('todos', function (Blueprint $table) {
+        if (!Schema::hasColumn('todos', 'user_id')) {
+            $table->unsignedBigInteger('user_id')->nullable()->after('id');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+        }
+    });
+}
 
-            // Tambahkan constraint setelah data bersih
-            // $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-        });
-    }
-
-    public function down()
-    {
-        Schema::table('todos', function (Blueprint $table) {
+public function down()
+{
+    Schema::table('todos', function (Blueprint $table) {
+        if (Schema::hasColumn('todos', 'user_id')) {
             $table->dropForeign(['user_id']);
             $table->dropColumn('user_id');
-        });
-    }
+        }
+    });
+}
 };

@@ -6,7 +6,6 @@ use App\Livewire\TodoList;
 use App\Models\Todo;
 use Illuminate\Http\Request;
 
-// === HALAMAN PUBLIK (bisa diakses tanpa login) ===
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
@@ -46,7 +45,6 @@ Route::post('/logout', function () {
     return redirect('/');
 })->name('logout');
 
-// === HALAMAN TERLINDUNGI (hanya untuk user login) ===
 Route::middleware(['auth'])->group(function () {
     Route::get('/', TodoList::class)->name('home');
 

@@ -1,4 +1,4 @@
-<div style="background-color: #13162d; color: #ffffff; border-radius: 20px; min-height: 100vh; font-family: Arial, sans-serif; padding: 0; margin: 0;">
+<div style="background: linear-gradient(to bottom, #adc7ff, #111f4d); color: #ffffff; border-radius: 20px; min-height: 100vh; font-family: Arial, sans-serif; padding: 0; margin: 0;">
     <style>
         @keyframes popIn {
             from { opacity: 0; transform: scale(0.85) translateY(10px); }
@@ -14,7 +14,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.6);
+            background-color: rgba(0, 0, 0, 0.6);
             z-index: 1000;
             display: flex;
             justify-content: center;
@@ -28,7 +28,7 @@
             pointer-events: all;
         }
         #logoutModal .modal-content {
-            background-color: #131e3f;
+            background-color: #3e4a6d;
             color: white;
             padding: 2rem;
             border-radius: 16px;
@@ -64,7 +64,7 @@
             pointer-events: all;
         }
         .delete-modal .modal-content {
-            background-color: #131e3f;
+            background-color: #3e4a6d;
             color: white;
             padding: 2rem;
             border-radius: 16px;
@@ -85,7 +85,7 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            background-color: #10b981; /* hijau sukses */
+            background-color: #10b981;
             color: white;
             padding: 12px 20px;
             border-radius: 8px;
@@ -102,7 +102,7 @@
     </style>
     <div style="position: absolute; top: 20px; left: 12px; z-index: 50;">
         <button onclick="document.getElementById('logoutModal').classList.add('active');"
-                style="background: linear-gradient(to right, #262a46, #141945); color: #ffffff; font-weight: bold; border-radius: 50px; padding: 8px 18px; font-size: 0.75rem; border: none; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.2);">
+                style="background: linear-gradient(to right, #363d71, #495092); color: #ffffff; font-weight: bold; border-radius: 50px; padding: 8px 18px; font-size: 0.75rem; border: none; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.2);">
             Logout
         </button>
     </div>
@@ -112,8 +112,8 @@
             TO DO LIST
         </h1>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-            <div style="background-color: #131e3f; border-radius: 20px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-                <h2 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem; text-align: center;">Daftar Kegiatan</h2>
+            <div style="background-color: #2d395e; border-radius: 20px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                <h2 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem; text-align: center;">Daftar List</h2>
                 <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 1rem;">
 
                     @forelse($todos as $todo)
@@ -170,7 +170,7 @@
                         </li>
                     @empty
                         <li style="text-align: center; padding: 2rem; color: rgba(218, 223, 255, 0.7); font-style: italic;">
-                            Belum ada kegiatan.
+                            Belum ada List.
                         </li>
                     @endforelse
                 </ul>
@@ -179,21 +179,21 @@
             <div style="display: flex; flex-direction: column; gap: 1.5rem;">
 
                 <button wire:click="$toggle('showAddForm')"
-                        style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background-color: #131e3f; color: #ffffff; font-weight: bold; border-radius: 50px; padding: 12px 0; border: none; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                    Tambahkan kegiatan
+                        style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background-color: #2d395e; color: #ffffff; font-weight: bold; border-radius: 50px; padding: 12px 0; border: none; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    Tambahkan List
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.404-1.404a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.596-8.596z" />
                     </svg>
                 </button>
 
                 @if($showAddForm)
-                    <div style="background-color: #131e3f; border-radius: 20px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-                        <h3 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem; text-align: center;">Tambah Kegiatan</h3>
+                    <div style="background-color: #2d395e; border-radius: 20px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                        <h3 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem; text-align: center;">Tambah List</h3>
 
                         <div style="margin-bottom: 1rem;">
                             <input type="text"
                                    wire:model="title"
-                                   placeholder="Masukkan judul kegiatan"
+                                   placeholder="Masukkan title"
                                    style="width: 100%; padding: 12px 16px; background-color: #ffffff; color: #171f3b; font-weight: bold; border-radius: 10px; border: none; box-sizing: border-box;">
 
                             @error('title')
@@ -231,13 +231,13 @@
                 @endif
 
                 @if($editingTodoId)
-                    <div style="background-color: #131e3f; border-radius: 20px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-                        <h3 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem; text-align: center;">Edit Kegiatan</h3>
+                    <div style="background-color: #2d395e; border-radius: 20px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                        <h3 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem; text-align: center;">Edit List</h3>
 
                         <div style="margin-bottom: 1rem;">
                             <input type="text"
                                    wire:model="editTitle"
-                                   placeholder="Judul kegiatan"
+                                   placeholder="Title"
                                    style="width: 100%; padding: 12px 16px; background-color: #ffffff; color: #13163f; font-weight: bold; border-radius: 10px; border: none; box-sizing: border-box;">
 
                             @error('editTitle')
@@ -280,18 +280,18 @@
     <div id="logoutModal">
         <div class="modal-content">
             <h3 style="margin-top: 0; font-size: 1.25rem;">Konfirmasi Logout</h3>
-            <p>Apakah Anda yakin ingin keluar dari akun?</p>
+            <p>Yakin mau keluar dari akun?</p>
             <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
                 <button onclick="document.getElementById('logoutModal').classList.remove('active');"
                         style="padding: 0.5rem 1.5rem; border-radius: 50px; background-color: #4b5563; color: white; border: none; cursor: pointer;">
-                    Batal
+                    Cancel
                 </button>
-                <!-- ✅ Form POST dengan @csrf -->
+                <!-- ✅ Form POST @csrf -->
                 <form method="POST" action="{{ route('logout') }}" style="display: inline;">
                     @csrf
                     <button type="submit"
                             style="padding: 0.5rem 1.5rem; border-radius: 50px; background-color: #ef4444; color: white; border: none; cursor: pointer;">
-                        Keluar
+                        Logout
                     </button>
                 </form>
             </div>
@@ -301,22 +301,22 @@
     <div id="deleteModal" class="delete-modal">
         <div class="modal-content">
             <h3 style="margin-top: 0; font-size: 1.25rem;">Konfirmasi Hapus</h3>
-            <p>Apakah Anda yakin ingin menghapus kegiatan ini?</p>
+            <p>Yakin mau hapus list ini?</p>
             <p style="font-weight: bold; margin: 0.5rem 0; color: #ff6b6b;" id="deleteModalTitle"></p>
             <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
                 <button onclick="closeDeleteModal()"
                         style="padding: 0.5rem 1.5rem; border-radius: 50px; background-color: #4b5563; color: white; border: none; cursor: pointer;">
-                    Batal
+                    Cancel
                 </button>
                 <button onclick="confirmDeleteTodo()"
-                        style="padding: 0.5rem 1.5rem; border-radius: 50px; background-color: #ef4444; color: white; border: none; cursor: pointer;">
-                    Hapus
+                        style="padding: 0.5rem 1.5rem; border-radius: 50px; background-color: #b93232; color: white; border: none; cursor: pointer;">
+                    Delete
                 </button>
             </div>
         </div>
     </div>
 
-    <div id="toast" class="toast">Kegiatan berhasil dihapus!</div>
+    <div id="toast" class="toast">Berhasil dihapus!</div>
 
     @push('scripts')
     <script>

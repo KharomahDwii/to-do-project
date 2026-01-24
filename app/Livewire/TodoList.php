@@ -77,7 +77,6 @@ public function deleteTodo($id)
     $todo = auth()->user()->todos()->findOrFail($id);
     $todo->delete();
 
-    // Refresh data
     $this->loadTodos();
 }
 
