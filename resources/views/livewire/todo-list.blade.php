@@ -99,6 +99,46 @@
             opacity: 1;
             transform: translateY(0);
         }
+        
+        @media (max-width: 768px) {
+            div[style*="display: grid; grid-template-columns: 1fr 1fr;"] {
+                grid-template-columns: 1fr !important;
+            }
+            div[style*="max-width: 1280px; margin: 0 auto; padding: 2rem;"] {
+                padding: 1rem !important;
+            }
+            h1[style*="font-size: 2.5rem"] {
+                font-size: 1.8rem !important;
+            }
+            button[style*="width: 28px; height: 28px;"] {
+                width: 24px !important;
+                height: 24px !important;
+            }
+            .modal-content {
+                padding: 1.5rem !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            div[style*="max-width: 1280px;"] {
+                padding: 0.75rem !important;
+            }
+            h1[style*="font-size: 2.5rem"] {
+                font-size: 1.5rem !important;
+            }
+            h2[style*="font-size: 1.25rem"] {
+                font-size: 1.1rem !important;
+            }
+            li[style*="padding: 1rem;"] {
+                padding: 0.75rem !important;
+            }
+            div[style*="font-size: 0.8rem;"] {
+                font-size: 0.75rem !important;
+            }
+            div[style*="display: flex; gap: 0.5rem;"] {
+                gap: 0.3rem !important;
+            }
+        }
     </style>
     <div style="position: absolute; top: 20px; left: 12px; z-index: 50;">
         <button onclick="document.getElementById('logoutModal').classList.add('active');"
@@ -109,7 +149,7 @@
 
     <div style="max-width: 1280px; margin: 0 auto; padding: 2rem;">
         <h1 style="text-align: center; font-size: 2.5rem; font-weight: bold; margin-bottom: 1.5rem; color: #ffffff;">
-            TO DO LIST
+            KEGIATAN SEHARI HARI
         </h1>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
             <div style="background-color: #2d395e; border-radius: 20px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
@@ -280,7 +320,7 @@
     <div id="logoutModal">
         <div class="modal-content">
             <h3 style="margin-top: 0; font-size: 1.25rem;">Konfirmasi Logout</h3>
-            <p>Yakin mau keluar dari akun?</p>
+            <p>Yakin mau logout?</p>
             <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
                 <button onclick="document.getElementById('logoutModal').classList.remove('active');"
                         style="padding: 0.5rem 1.5rem; border-radius: 50px; background-color: #4b5563; color: white; border: none; cursor: pointer;">
@@ -340,16 +380,8 @@
                 const remindAt = new Date(reminderStr).getTime();
                 const diff = remindAt - now;
 
-                const fiveMinutesMs = 300 * 1000;
                 const oneMinuteMs = 60 * 1000;
 
-                if (diff > 0 && diff <= fiveMinutesMs) {
-                    const key = `notified_5min_${todoId}`;
-                    if (!localStorage.getItem(key)) {
-                        sendBrowserNotification(title, "⏰ Sisa waktu 5 menit lagi!", todoId);
-                        localStorage.setItem(key, 'true');
-                    }
-                }
 
                 if (diff > 0 && diff <= oneMinuteMs) {
                     const key = `notified_1min_${todoId}`;
@@ -409,7 +441,7 @@
                 if (component) {
                     component.call('deleteTodo', currentDeleteId).then(() => {
                         const toast = document.getElementById('toast');
-                        toast.textContent = 'Kegiatan berhasil dihapus!';
+                        toast.textContent = 'Well well well!';
                         toast.style.backgroundColor = '#10b981';
                         toast.classList.add('show');
                         setTimeout(() => toast.classList.remove('show'), 3000);
