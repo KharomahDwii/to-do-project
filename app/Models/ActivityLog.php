@@ -6,28 +6,29 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Todo extends Model
+class ActivityLog extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'user_id',
-        'title',
+        'todo_id',
+        'action',
         'description',
-        'completed',
-        'reminder_at',
-        'metadata',
-        'media_path'
+        'metadata'
     ];
 
     protected $casts = [
-        'reminder_at' => 'datetime',
-        'completed' => 'boolean',
         'metadata' => 'array'
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function todo(): BelongsTo
+    {
+        return $this->belongsTo(Todo::class);
     }
 }
