@@ -6,25 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up()
-{
-    Schema::create('todos', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('user_id')->constrained()->onDelete('cascade');
-    $table->string('title', 50);
-    $table->text('description')->nullable();
-    $table->boolean('completed')->default(false);
-    $table->dateTime('reminder_at')->nullable();
-    $table->timestamps();
-});
-}
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    {
+        Schema::create('todos', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('title');
+            $table->text('description');
+            $table->timestamp('reminder_at')->nullable();
+            $table->boolean('is_completed')->default(false);
+            $table->string('media_path')->nullable();
+            $table->json('metadata')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+        });
+    }
+
+    public function down()
     {
         Schema::dropIfExists('todos');
     }

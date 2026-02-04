@@ -6,23 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up(): void
-    {
-        Schema::create('activity_logs', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('todo_id')->nullable()->constrained()->onDelete('cascade');
-            $table->string('action'); // created, updated, deleted, completed, archived
-            $table->string('description');
-            $table->json('metadata')->nullable();
-            $table->timestamps();
-        });
-
-        // Tambahkan kolom media ke todos jika belum ada
-        Schema::table('todos', function (Blueprint $table) {
-            $table->string('media_path')->nullable();
-        });
-    }
+    // database/migrations/xxxx_create_activity_logs_table.php
+public function up()
+{
+    Schema::create('activity_logs', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('user_id')->constrained()->onDelete('cascade');
+        $table->foreignId('todo_id')->nullable()->constrained()->onDelete('set null');
+        $table->string('action');
+        $table->text('description');
+        $table->json('metadata')->nullable(); // HARUS JSON!
+        $table->timestamps();
+    });
+}
 
     public function down(): void
     {

@@ -15,11 +15,16 @@ class ActivityLog extends Model
         'todo_id',
         'action',
         'description',
-        'metadata'
+        'metadata',
     ];
 
+    /**
+     * 
+     */
     protected $casts = [
-        'metadata' => 'array'
+        'metadata' => 'array',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

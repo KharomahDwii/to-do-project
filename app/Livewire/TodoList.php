@@ -11,6 +11,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class TodoList extends Component
 {
@@ -36,18 +38,18 @@ class TodoList extends Component
     public $search = '';
 
     protected $listeners = [
-        'refresh-todos' => 'loadData'
+        'refresh-todos' => 'loadData',
+        'profileUpdated' => 'refreshProfile'
     ];
 
     protected $rules = [
         'modalTitle' => 'required|string|max:50',
         'modalDescription' => 'nullable|string|max:1000',
-        'modalDeadline' => 'required|date_format:Y-m-d\TH:i',
+        'modalDeadline' => 'required|date',
         'modalCategory' => 'required|in:proker,event,rapat,dana,lainnya',
         'modalMedia' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-
         'profileAvatarFile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        'profileName' => 'required|string|max:255', 
+        'profileName' => 'required|string|min:3|max:255',
     ];
 
     protected $validationAttributes = [
@@ -59,25 +61,51 @@ class TodoList extends Component
         'profileName' => 'Nama pengguna', 
     ];
 
+    protected $messages = [
+        'modalTitle.required' => 'Judul catatan wajib diisi.',
+        'modalTitle.max' => 'Judul maksimal 50 karakter.',
+        'modalDeadline.required' => 'Deadline wajib diisi.',
+        'modalCategory.required' => 'Kategori wajib dipilih.',
+        'modalMedia.image' => 'File harus berupa gambar.',
+        'modalMedia.max' => 'Ukuran gambar maksimal 2MB.',
+        'modalMedia.mimes' => 'Format gambar harus JPEG, PNG, JPG, atau GIF.',
+        'profileName.required' => 'Nama pengguna wajib diisi.',
+        'profileName.min' => 'Nama pengguna minimal 3 karakter.',
+        'profileName.max' => 'Nama pengguna maksimal 255 karakter.',
+        'profileAvatarFile.image' => 'File harus berupa gambar.',
+        'profileAvatarFile.max' => 'Ukuran gambar maksimal 2MB.',
+        'profileAvatarFile.mimes' => 'Format gambar harus JPEG, PNG, JPG, atau GIF.',
+    ];
+
     public function mount()
     {
         $this->loadData();
-        $tomorrow = now()->addDay();
-        $this->modalDeadline = $tomorrow->format('Y-m-d\TH:i');
+        $this->modalDeadline = now()->addDay()->format('Y-m-d\TH:i');
+        $this->loadProfileData();
+    }
 
+    public function render()
+    {
+        $this->checkUpcomingDeadlines();
+        
+        if ($this->currentView === 'activity-log') {
+            $this->loadActivityLogs();
+        }
+        
+        return view('livewire.todo-list');
+    }
+    
+    private function loadProfileData()
+    {
         $user = Auth::user();
         if ($user) {
+            $user = $user->fresh();
             $this->profileName = $user->name;
             $this->profileAvatar = $this->getProfilePhotoUrl($user);
         } else {
             $this->profileName = 'Ketua OSIS';
             $this->profileAvatar = $this->getDefaultAvatar('K');
         }
-    }
-
-    public function render()
-    {
-        return view('livewire.todo-list');
     }
     
     private function getProfilePhotoUrl($user)
@@ -91,30 +119,141 @@ class TodoList extends Component
     private function getDefaultAvatar($letter)
     {
         $firstLetter = strtoupper(substr($letter, 0, 1));
-        return "https://placehold.co/100?text={$firstLetter}";
+        return "https://placehold.co/100?text=      {$firstLetter}";
     }
     
+    public function refreshProfile()
+    {
+        $this->loadProfileData();
+        $this->loadData();
+    }
+
+    public function openProfileModal()
+    {
+        $user = Auth::user();
+        if (!$user) {
+            session()->flash('error', '❌ Anda harus login untuk mengubah profil.');
+            return redirect()->route('login');
+        }
+        
+        $this->showProfileModal = true;
+        $user = $user->fresh();
+        $this->profileName = $user->name;
+        $this->profileAvatar = $this->getProfilePhotoUrl($user);
+        $this->profileAvatarFile = null;
+        $this->resetErrorBag();
+        
+        Log::info('Profile modal opened', ['user_id' => $user->id, 'current_name' => $user->name]);
+    }
+
+    public function closeProfileModal()
+    {
+        $this->showProfileModal = false;
+        $this->profileAvatarFile = null;
+        $this->resetErrorBag();
+    }
+
+    public function updatedProfileAvatarFile()
+    {
+        $this->validateOnly('profileAvatarFile');
+    }
+
+    public function saveProfile()
+    {
+        $user = Auth::user();
+        if (!$user) {
+            session()->flash('error', '❌ Anda harus login untuk mengubah profil.');
+            Log::error('Save profile failed: User not authenticated');
+            return;
+        }
+
+        try {
+            $this->validate([
+                'profileName' => 'required|string|min:3|max:255',
+                'profileAvatarFile' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            ]);
+
+            $hasChanges = false;
+            $changes = [];
+            
+            if ($this->profileName !== $user->name) {
+                $oldName = $user->name;
+                $user->name = $this->profileName;
+                $changes[] = "nama dari '{$oldName}' menjadi '{$this->profileName}'";
+                $hasChanges = true;
+            }
+
+            if ($this->profileAvatarFile) {
+                if ($user->profile_photo_path && Storage::disk('public')->exists($user->profile_photo_path)) {
+                    Storage::disk('public')->delete($user->profile_photo_path);
+                }
+
+                $path = $this->profileAvatarFile->store('avatars', 'public');
+                $user->profile_photo_path = $path;
+                $changes[] = "foto profil";
+                $hasChanges = true;
+            }
+
+            if ($hasChanges) {
+                $user->save();
+                
+                $changeDesc = !empty($changes) ? implode(', ', $changes) : 'profil diperbarui';
+                $this->logActivity('profile_updated', "Memperbarui profil: {$changeDesc}", null, [
+                    'changes' => $changes,
+                    'has_avatar' => !!$this->profileAvatarFile,
+                    'new_name' => $user->name,
+                    'old_name' => $user->getOriginal('name') ?? $user->name
+                ]);
+                
+                $this->closeProfileModal();
+                $this->loadData();
+                
+                session()->flash('message', '✅ Profil berhasil diperbarui!');
+                
+                Log::info('Profile updated successfully', ['user_id' => $user->id, 'new_name' => $user->name]);
+                
+            } else {
+                $this->closeProfileModal();
+                session()->flash('message', 'ℹ️ Tidak ada perubahan yang disimpan.');
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Error updating profile: ' . $e->getMessage());
+            session()->flash('error', '❌ Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    public function logout()
+    {
+        if (Auth::check()) {
+            $this->logActivity('logged_out', "Pengguna keluar dari akun", null, [
+                'logout_time' => now()->toDateTimeString()
+            ]);
+        }
+        
+        Auth::logout();
+        session()->invalidate();
+        session()->regenerateToken();
+        
+        session()->flash('message', '✅ Anda telah keluar dari akun.');
+        return redirect('/');
+    }
+
     public function getFilteredTodosProperty()
     {
         if (!$this->todos) {
             return collect();
         }
 
-        if ($this->currentView === 'history') {
-            return collect();
-        }
+        $filtered = $this->currentView === 'history' 
+            ? $this->todos->where('completed', true) 
+            : $this->todos->where('completed', false);
 
-        $filtered = $this->todos->filter(function($todo) {
-            if ($this->currentFilter === 'completed') {
-                return $todo->completed;
-            } else {
-                if ($this->currentFilter !== 'all') {
-                    $category = $this->getCategoryFromMetadata($todo);
-                    return !$todo->completed && $category === $this->currentFilter;
-                }
-                return !$todo->completed;
-            }
-        });
+        if ($this->currentView !== 'history' && $this->currentFilter !== 'all' && $this->currentFilter !== 'completed') {
+            $filtered = $filtered->filter(function($todo) {
+                return ($todo->metadata['category'] ?? 'lainnya') === $this->currentFilter;
+            });
+        }
 
         if ($this->search) {
             $search = strtolower($this->search);
@@ -124,16 +263,37 @@ class TodoList extends Component
             });
         }
 
-        return $filtered;
+        return $filtered->values();
     }
 
     public function loadData()
     {
         if (auth()->check()) {
-            $this->todos = auth()->user()->todos()->orderBy('created_at', 'desc')->get();
-            $this->activityLogs = auth()->user()->activityLogs()->with('todo')->orderBy('created_at', 'desc')->take(50)->get();
+            $this->todos = auth()->user()->todos()
+                ->orderBy('reminder_at', 'asc')
+                ->orderBy('created_at', 'desc')
+                ->get();
+            
+            $this->loadActivityLogs();
         } else {
             $this->todos = collect();
+            $this->activityLogs = collect();
+        }
+    }
+    
+    private function loadActivityLogs()
+    {
+        if (auth()->check()) {
+            $this->activityLogs = auth()->user()->activityLogs()
+                ->with('todo')
+                ->orderBy('created_at', 'desc')
+                ->get();
+                
+            Log::info('Activity logs loaded', [
+                'count' => $this->activityLogs->count(),
+                'user_id' => auth()->id()
+            ]);
+        } else {
             $this->activityLogs = collect();
         }
     }
@@ -177,56 +337,57 @@ class TodoList extends Component
 
     public function saveModal()
     {
-        $this->validate();
-        
         try {
+            $rules = [
+                'modalTitle' => 'required|string|max:50',
+                'modalDescription' => 'nullable|string|max:1000',
+                'modalDeadline' => 'required|date',
+                'modalCategory' => 'required|in:proker,event,rapat,dana,lainnya',
+                'modalMedia' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            ];
+            $this->validate($rules);
+
             if ($this->editingId) {
-                $todo = Todo::where('id', $this->editingId)->where('user_id', auth()->id())->first();
-                if ($todo) {
-                    $oldTitle = $todo->title;
-                    $oldCategory = $this->getCategoryFromMetadata($todo);
-                    
-                    $metadata = $todo->metadata ?? [];
-                    $metadata['category'] = $this->modalCategory;
-                    
-                    $mediaPath = $todo->media_path;
-                    
-                    if ($this->modalMedia) {
-                        if ($todo->media_path && Storage::disk('public')->exists($todo->media_path)) {
-                            Storage::disk('public')->delete($todo->media_path);
-                        }
-                        $mediaPath = $this->modalMedia->store('todos', 'public');
-                    }
-                    
-                    $todo->update([
-                        'title' => $this->modalTitle,
-                        'description' => $this->modalDescription,
-                        'reminder_at' => $this->modalDeadline ? Carbon::parse($this->modalDeadline) : null,
-                        'metadata' => $metadata,
-                        'media_path' => $mediaPath
-                    ]);
-
-                    $this->logActivity('updated', "Mengedit catatan '{$oldTitle}' menjadi '{$this->modalTitle}'", $todo->id, [
-                        'old_category' => $oldCategory,
-                        'new_category' => $this->modalCategory,
-                        'has_media' => !!$mediaPath
-                    ]);
-
-                    $this->dispatch('swal', [
-                        'title' => 'Berhasil!',
-                        'text' => '✅ Catatan berhasil diperbarui!',
-                        'icon' => 'success',
-                        'timer' => 3000
-                    ]);
-                } else {
-                    $this->dispatch('swal', [
-                        'title' => 'Gagal!',
-                        'text' => '❌ Catatan tidak ditemukan atau tidak memiliki akses.',
-                        'icon' => 'error',
-                        'timer' => 3000
-                    ]);
+                $todo = Todo::where('id', $this->editingId)
+                    ->where('user_id', auth()->id())
+                    ->first();
+                
+                if (!$todo) {
+                    session()->flash('error', '❌ Catatan tidak ditemukan atau tidak memiliki akses.');
                     return;
                 }
+
+                $oldTitle = $todo->title;
+                $oldCategory = $this->getCategoryFromMetadata($todo);
+                
+                $metadata = $todo->metadata ?? [];
+                $metadata['category'] = $this->modalCategory;
+                
+                $mediaPath = $todo->media_path;
+                
+                if ($this->modalMedia) {
+                    if ($todo->media_path && Storage::disk('public')->exists($todo->media_path)) {
+                        Storage::disk('public')->delete($todo->media_path);
+                    }
+                    $mediaPath = $this->modalMedia->store('todos', 'public');
+                }
+                
+                $todo->update([
+                    'title' => $this->modalTitle,
+                    'description' => $this->modalDescription,
+                    'reminder_at' => $this->modalDeadline ? Carbon::parse($this->modalDeadline) : null,
+                    'metadata' => $metadata,
+                    'media_path' => $mediaPath
+                ]);
+
+                $this->logActivity('updated', "Mengedit catatan '{$oldTitle}' menjadi '{$this->modalTitle}'", $todo->id, [
+                    'old_category' => $oldCategory,
+                    'new_category' => $this->modalCategory,
+                    'has_media' => !!$mediaPath
+                ]);
+
+                session()->flash('message', '✅ Catatan berhasil diperbarui!');
+                
             } else {
                 $metadata = ['category' => $this->modalCategory];
                 $mediaPath = null;
@@ -239,7 +400,7 @@ class TodoList extends Component
                     'title' => $this->modalTitle,
                     'description' => $this->modalDescription,
                     'completed' => false,
-                    'reminder_at' => $this->modalDeadline ? Carbon::parse($this->modalDeadline) : null,
+                    'reminder_at' => Carbon::parse($this->modalDeadline),
                     'metadata' => $metadata,
                     'media_path' => $mediaPath
                 ]);
@@ -249,25 +410,21 @@ class TodoList extends Component
                     'has_media' => !!$mediaPath
                 ]);
 
-                $this->dispatch('swal', [
-                    'title' => 'Berhasil!',
-                    'text' => '✅ Catatan baru berhasil ditambahkan!',
-                    'icon' => 'success',
-                    'timer' => 3000
-                ]);
+                session()->flash('message', '✅ Catatan baru berhasil ditambahkan!');
             }
             
             $this->closeModal();
             $this->loadData();
             
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
-            Log::error('Error saving todo: ' . $e->getMessage());
-            $this->dispatch('swal', [
-                'title' => 'Error!',
-                'text' => '❌ Terjadi kesalahan: ' . $e->getMessage(),
-                'icon' => 'error',
-                'timer' => 5000
+            Log::error('Error saving todo: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'todo_id' => $this->editingId ?? 'new',
+                'error' => $e->getMessage()
             ]);
+            session()->flash('error', '❌ Gagal menyimpan catatan. Silakan coba lagi.');
         }
     }
 
@@ -298,38 +455,42 @@ class TodoList extends Component
             
             if ($todo->completed) {
                 $this->logActivity('completed', "Menandai catatan '{$todo->title}' sebagai selesai", $todo->id);
-                $this->dispatch('swal', [
-                    'title' => 'Berhasil!',
-                    'text' => '✅ Catatan ditandai sebagai selesai!',
-                    'icon' => 'success',
-                    'timer' => 2000
-                ]);
+                session()->flash('message', '✅ Catatan ditandai sebagai selesai!');
             } else {
                 $this->logActivity('archived', "Mengaktifkan kembali catatan '{$todo->title}'", $todo->id);
-                $this->dispatch('swal', [
-                    'title' => 'Berhasil!',
-                    'text' => '✅ Catatan diaktifkan kembali!',
-                    'icon' => 'success',
-                    'timer' => 2000
-                ]);
+                session()->flash('message', '✅ Catatan diaktifkan kembali!');
             }
             
             $this->loadData();
         } else {
-            $this->dispatch('swal', [
-                'title' => 'Gagal!',
-                'text' => '❌ Catatan tidak ditemukan atau tidak memiliki akses.',
-                'icon' => 'error',
-                'timer' => 3000
-            ]);
+            session()->flash('error', '❌ Catatan tidak ditemukan atau tidak memiliki akses.');
         }
     }
 
     public function deleteTodo($id)
     {
         try {
-            $todo = Todo::where('id', $id)->where('user_id', auth()->id())->firstOrFail();
+            $todo = Todo::where('id', $id)
+                ->where('user_id', auth()->id())
+                ->firstOrFail();
+            
             $todoTitle = $todo->title;
+            
+            $deletedTodoInfo = [
+                'id' => $todo->id,
+                'title' => $todo->title,
+                'category' => $this->getCategoryFromMetadata($todo),
+                'deadline' => $todo->reminder_at?->format('Y-m-d H:i:s') ?? null,
+                'description_preview' => Str::limit($todo->description ?? '', 50, '...'),
+                'had_media' => !empty($todo->media_path),
+                'created_at' => $todo->created_at?->format('Y-m-d H:i:s') ?? null,
+                'deleted_at' => now()->format('Y-m-d H:i:s'),
+                'deleted_by' => [
+                    'id' => auth()->id(),
+                    'name' => auth()->user()->name ?? 'User',
+                    'email' => auth()->user()->email ?? 'unknown@example.com',
+                ]
+            ];
             
             if ($todo->media_path && Storage::disk('public')->exists($todo->media_path)) {
                 Storage::disk('public')->delete($todo->media_path);
@@ -337,151 +498,88 @@ class TodoList extends Component
             
             $todo->delete();
             
-            $this->logActivity('deleted', "Menghapus catatan '{$todoTitle}'", $id);
+            $this->logActivity('deleted', "Menghapus catatan '{$todoTitle}'", $id, $deletedTodoInfo);
             
             $this->loadData();
             
-            $this->dispatch('swal', [
-                'title' => 'Berhasil!',
-                'text' => '🗑️ Catatan berhasil dihapus!',
-                'icon' => 'success',
-                'timer' => 2000
+            session()->flash('message', '🗑️ Catatan berhasil dihapus!');
+            Log::info('Todo deleted successfully', [
+                'todo_id' => $id,
+                'user_id' => auth()->id(),
+                'title' => $todoTitle
             ]);
             
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            $this->dispatch('swal', [
-                'title' => 'Gagal!',
-                'text' => '❌ Catatan tidak ditemukan atau tidak memiliki akses.',
-                'icon' => 'error',
-                'timer' => 3000
+            session()->flash('error', '❌ Catatan tidak ditemukan atau tidak memiliki akses.');
+            Log::warning('Todo not found for deletion', [
+                'todo_id' => $id,
+                'user_id' => auth()->id() ?? 'guest'
             ]);
         } catch (\Exception $e) {
-            Log::error('Error deleting todo: ' . $e->getMessage());
-            $this->dispatch('swal', [
-                'title' => 'Error!',
-                'text' => '❌ Terjadi kesalahan saat menghapus catatan.',
-                'icon' => 'error',
-                'timer' => 5000
+            Log::error('Error deleting todo: ' . $e->getMessage(), [
+                'todo_id' => $id,
+                'user_id' => auth()->id() ?? 'guest',
+                'error' => $e->getMessage()
             ]);
+            session()->flash('error', '❌ Terjadi kesalahan saat menghapus catatan.');
         }
-    }
-
-    public function openProfileModal()
-    {
-        $this->showProfileModal = true;
-        $user = Auth::user();
-        if ($user) {
-            $this->profileName = $user->name;
-            $this->profileAvatar = $this->getProfilePhotoUrl($user);
-            $this->profileAvatarFile = null;
-            $this->resetErrorBag(); 
-        }
-    }
-
-    public function closeProfileModal()
-    {
-        $this->showProfileModal = false;
-        $this->profileAvatarFile = null;
-        $this->resetErrorBag();
-    }
-
-    public function updatedProfileAvatarFile()
-    {
-        $this->validateOnly('profileAvatarFile');
-    }
-
-    public function saveProfile()
-    {
-        $user = Auth::user();
-        if (!$user) {
-            $this->dispatch('swal', [
-                'title' => 'Error!',
-                'text' => '❌ Anda harus login untuk mengubah profil.',
-                'icon' => 'error',
-                'timer' => 3000
-            ]);
-            return;
-        }
-
-        $this->validate();
-
-        try {
-            $oldName = $user->name;
-            $user->name = $this->profileName;
-
-            if ($this->profileAvatarFile) {
-
-                if ($user->profile_photo_path && Storage::disk('public')->exists($user->profile_photo_path)) {
-                    Storage::disk('public')->delete($user->profile_photo_path);
-                }
-
-                $path = $this->profileAvatarFile->store('avatars', 'public');
-                $user->profile_photo_path = $path;
-            }
-
-            $user->save();
-
-            $this->profileAvatar = $this->getProfilePhotoUrl($user);
-
-            $changes = [];
-            if ($oldName !== $this->profileName) {
-                $changes[] = "nama dari '{$oldName}' menjadi '{$this->profileName}'";
-            }
-            if ($this->profileAvatarFile) {
-                $changes[] = "foto profil diperbarui";
-            }
-            
-            $changeDesc = !empty($changes) ? implode(', ', $changes) : 'profil diperbarui';
-            $this->logActivity('profile_updated', "Memperbarui profil: {$changeDesc}", null, [
-                'changes' => $changes,
-                'has_avatar' => !!$this->profileAvatarFile
-            ]);
-            
-            $this->dispatch('swal', [
-                'title' => 'Berhasil!',
-                'text' => '✅ Profil berhasil diperbarui!',
-                'icon' => 'success',
-                'timer' => 3000
-            ]);
-            
-            $this->closeProfileModal();
-            
-            $this->dispatch('profile-updated');
-            
-        } catch (\Exception $e) {
-            Log::error('Error updating profile: ' . $e->getMessage());
-            $this->dispatch('swal', [
-                'title' => 'Error!',
-                'text' => '❌ Terjadi kesalahan saat memperbarui profil.',
-                'icon' => 'error',
-                'timer' => 5000
-            ]);
-        }
-    }
-
-    public function logout()
-    {
-        $this->logActivity('logged_out', "Pengguna keluar dari akun", null, [
-            'logout_time' => now()->format('Y-m-d H:i:s')
-        ]);
-        
-        Auth::logout();
-        session()->flash('message', 'Anda telah keluar dari akun.');
-        return redirect('/');
     }
     
     private function logActivity(string $action, string $description, ?int $todoId = null, array $metadata = [])
     {
         try {
-            ActivityLog::create([
+            if (!auth()->check()) {
+                Log::warning('logActivity: User not authenticated');
+                return null;
+            }
+
+            Log::info('=== PREPARING TO SAVE ACTIVITY LOG ===', [
+                'action' => $action,
+                'description' => $description,
+                'todo_id' => $todoId,
+                'user_id' => auth()->id(),
+                'metadata' => $metadata
+            ]);
+
+            $log = ActivityLog::create([
                 'user_id' => auth()->id(),
                 'todo_id' => $todoId,
                 'action' => $action,
                 'description' => $description,
                 'metadata' => $metadata
             ]);
+
+            if ($log && $log->wasRecentlyCreated) {
+                Log::info('✅ Activity log saved successfully', [
+                    'log_id' => $log->id,
+                    'action' => $action,
+                    'todo_id' => $todoId
+                ]);
+                
+                $this->dispatch('activityLogCreated', [
+                    'log_id' => $log->id,
+                    'action' => $action
+                ]);
+            } else {
+                Log::warning('⚠️ Activity log may not be saved', [
+                    'log_exists' => $log !== null,
+                    'was_recent' => $log->wasRecentlyCreated ?? false
+                ]);
+            }
+
+            return $log;
+            
         } catch (\Exception $e) {
-            Log::error('Error creating activity log: ' . $e->getMessage());
+            Log::error('❌ Activity log creation FAILED', [
+                'error' => $e->getMessage(),
+                'action' => $action,
+                'description' => $description,
+                'todo_id' => $todoId,
+                'metadata' => $metadata,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            session()->flash('warning', '⚠️ Catatan dihapus, tapi riwayat tidak tersimpan.');
         }
     }
     
@@ -489,6 +587,10 @@ class TodoList extends Component
     {
         $this->currentView = $view;
         $this->currentFilter = 'all';
+
+        if ($view === 'activity-log') {
+            $this->loadActivityLogs();
+        }
     }
 
     public function setFilter($filter)
@@ -523,5 +625,115 @@ class TodoList extends Component
             'lainnya' => 'ph-tag'
         ];
         return $icons[$category] ?? 'ph-tag';
+    }
+
+    public function checkUpcomingDeadlines()
+    {
+        if (!auth()->check()) {
+            return;
+        }
+
+        $now = now();
+        $todos = auth()->user()->todos()
+            ->where('completed', false)
+            ->whereBetween('reminder_at', [$now, $now->copy()->addMinutes(10)])
+            ->get();
+
+        foreach ($todos as $todo) {
+            if (!$todo->reminder_at) {
+                continue;
+            }
+
+            $diffMinutes = $now->diffInMinutes($todo->reminder_at, false);
+            $notificationKey5min = 'notif_5min_' . $todo->id;
+            $notificationKeyDeadline = 'notif_deadline_' . $todo->id;
+
+            if ($diffMinutes == 5 && !session()->has($notificationKey5min)) {
+                $this->dispatch('showNotification', [
+                    'title' => '⏰ Pengingat 5 Menit',
+                    'message' => "Deadline catatan '{$todo->title}' akan tiba dalam 5 menit!",
+                    'type' => 'warning',
+                    'icon' => '⏰',
+                    'todoId' => $todo->id
+                ]);
+                session()->put($notificationKey5min, true);
+            }
+
+            if ($diffMinutes <= 0 && !session()->has($notificationKeyDeadline)) {
+                $this->dispatch('showNotification', [
+                    'title' => '🚨 Deadline Tiba!',
+                    'message' => "Waktu deadline catatan '{$todo->title}' telah tiba!",
+                    'type' => 'error',
+                    'icon' => '🚨',
+                    'todoId' => $todo->id
+                ]);
+                session()->put($notificationKeyDeadline, true);
+            }
+        }
+    }
+
+    public function getUpcomingTodos()
+    {
+        return Todo::whereNotNull('reminder_at')
+            ->where('user_id', auth()->id())
+            ->select('id', 'title', 'reminder_at')
+            ->get()
+            ->toArray();
+    }
+
+    public function getLogBorderColor($action)
+    {
+        $colors = [
+            'created' => 'border-green-500',
+            'updated' => 'border-blue-500',
+            'completed' => 'border-purple-500',
+            'deleted' => 'border-red-500',
+            'archived' => 'border-yellow-500',
+            'profile_updated' => 'border-indigo-500',
+            'logged_out' => 'border-gray-500',
+        ];
+        return $colors[$action] ?? 'border-gray-300';
+    }
+
+    public function getLogBgColor($action)
+    {
+        $colors = [
+            'created' => 'bg-green-500',
+            'updated' => 'bg-blue-500',
+            'completed' => 'bg-purple-500',
+            'deleted' => 'bg-red-500',
+            'archived' => 'bg-yellow-500',
+            'profile_updated' => 'bg-indigo-500',
+            'logged_out' => 'bg-gray-500',
+        ];
+        return $colors[$action] ?? 'bg-gray-400';
+    }
+
+    public function getLogIcon($action)
+    {
+        $icons = [
+            'created' => 'ph-plus-circle',
+            'updated' => 'ph-pencil-circle',
+            'completed' => 'ph-check-circle',
+            'deleted' => 'ph-trash',
+            'archived' => 'ph-archive',
+            'profile_updated' => 'ph-user-circle',
+            'logged_out' => 'ph-sign-out',
+        ];
+        return $icons[$action] ?? 'ph-clock-counter-clockwise';
+    }
+
+    public function getLogTitle($action)
+    {
+        $titles = [
+            'created' => 'Catatan Dibuat',
+            'updated' => 'Catatan Diedit',
+            'completed' => 'Catatan Diselesaikan',
+            'deleted' => 'Catatan Dihapus',
+            'archived' => 'Catatan Diaktifkan Kembali',
+            'profile_updated' => 'Profil Diperbarui',
+            'logged_out' => 'Logout',
+        ];
+        return $titles[$action] ?? 'Aktivitas';
     }
 }

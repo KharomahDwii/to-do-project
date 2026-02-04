@@ -22,7 +22,7 @@ class Todo extends Model
 
     protected $casts = [
         'reminder_at' => 'datetime',
-        'completed' => 'boolean',
+        'reminder_sent' => 'boolean',
         'metadata' => 'array'
     ];
 
