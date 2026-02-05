@@ -495,10 +495,10 @@ class TodoList extends Component
             if ($todo->media_path && Storage::disk('public')->exists($todo->media_path)) {
                 Storage::disk('public')->delete($todo->media_path);
             }
+            $this->logActivity('deleted', "Menghapus catatan '{$todoTitle}'", $id, $deletedTodoInfo);
             
             $todo->delete();
             
-            $this->logActivity('deleted', "Menghapus catatan '{$todoTitle}'", $id, $deletedTodoInfo);
             
             $this->loadData();
             
@@ -628,49 +628,64 @@ class TodoList extends Component
     }
 
     public function checkUpcomingDeadlines()
-    {
-        if (!auth()->check()) {
-            return;
+{
+    if (!auth()->check()) {
+        return;
+    }
+
+    $now = now();
+    $todos = auth()->user()->todos()
+        ->where('completed', false)
+        ->whereBetween('reminder_at', [$now, $now->copy()->addMinutes(10)])
+        ->get();
+
+    foreach ($todos as $todo) {
+        if (!$todo->reminder_at) {
+            continue;
         }
 
-        $now = now();
-        $todos = auth()->user()->todos()
-            ->where('completed', false)
-            ->whereBetween('reminder_at', [$now, $now->copy()->addMinutes(10)])
-            ->get();
+        $diffMinutes = $now->diffInMinutes($todo->reminder_at, false);
+        
+        // Session keys untuk mencegah notifikasi berulang
+        $notificationKey5min = 'notif_5min_' . $todo->id;
+        $notificationKeyDeadline = 'notif_deadline_' . $todo->id;
 
-        foreach ($todos as $todo) {
-            if (!$todo->reminder_at) {
-                continue;
-            }
+        // ✅ Notifikasi 5 menit sebelum deadline (HARD-CODED)
+        if ($diffMinutes == 5 && !session()->has($notificationKey5min)) {
+            $this->dispatch('showNotification', [
+                'title' => '⏰ Pengingat 5 Menit',
+                'message' => "Deadline catatan '{$todo->title}' akan tiba dalam 5 menit!",
+                'type' => 'warning',
+                'icon' => '⏰',
+                'todoId' => $todo->id
+            ]);
+            session()->put($notificationKey5min, true);
+            
+            Log::info('5-minute reminder notification sent', [
+                'todo_id' => $todo->id,
+                'title' => $todo->title,
+                'diff_minutes' => $diffMinutes
+            ]);
+        }
 
-            $diffMinutes = $now->diffInMinutes($todo->reminder_at, false);
-            $notificationKey5min = 'notif_5min_' . $todo->id;
-            $notificationKeyDeadline = 'notif_deadline_' . $todo->id;
-
-            if ($diffMinutes == 5 && !session()->has($notificationKey5min)) {
-                $this->dispatch('showNotification', [
-                    'title' => '⏰ Pengingat 5 Menit',
-                    'message' => "Deadline catatan '{$todo->title}' akan tiba dalam 5 menit!",
-                    'type' => 'warning',
-                    'icon' => '⏰',
-                    'todoId' => $todo->id
-                ]);
-                session()->put($notificationKey5min, true);
-            }
-
-            if ($diffMinutes <= 0 && !session()->has($notificationKeyDeadline)) {
-                $this->dispatch('showNotification', [
-                    'title' => '🚨 Deadline Tiba!',
-                    'message' => "Waktu deadline catatan '{$todo->title}' telah tiba!",
-                    'type' => 'error',
-                    'icon' => '🚨',
-                    'todoId' => $todo->id
-                ]);
-                session()->put($notificationKeyDeadline, true);
-            }
+        // ✅ Notifikasi saat deadline tiba
+        if ($diffMinutes <= 0 && !session()->has($notificationKeyDeadline)) {
+            $this->dispatch('showNotification', [
+                'title' => '🚨 Deadline Tiba!',
+                'message' => "Waktu deadline catatan '{$todo->title}' telah tiba!",
+                'type' => 'error',
+                'icon' => '🚨',
+                'todoId' => $todo->id
+            ]);
+            session()->put($notificationKeyDeadline, true);
+            
+            Log::info('Deadline notification sent', [
+                'todo_id' => $todo->id,
+                'title' => $todo->title
+            ]);
         }
     }
+}
 
     public function getUpcomingTodos()
     {
@@ -680,6 +695,15 @@ class TodoList extends Component
             ->get()
             ->toArray();
     }
+
+    public function getUncompletedTodosWithDeadline()
+{
+    return auth()->user()->todos()
+        ->whereNull('completed_at')
+        ->whereNotNull('reminder_at')
+        ->select('id', 'title', 'reminder_at')
+        ->get();
+}
 
     public function getLogBorderColor($action)
     {

@@ -6,17 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+// database/migrations/xxxx_add_reminder_minutes_to_todos_table.php
 public function up()
 {
     Schema::table('todos', function (Blueprint $table) {
-        $table->boolean('reminder_sent')->default(false)->after('completed');
+        $table->integer('reminder_minutes')->nullable()->after('reminder_at');
     });
 }
 
 public function down()
 {
     Schema::table('todos', function (Blueprint $table) {
-        $table->dropColumn('reminder_sent');
+        $table->dropColumn('reminder_minutes');
     });
 }
 };

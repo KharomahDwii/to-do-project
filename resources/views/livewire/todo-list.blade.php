@@ -8,7 +8,7 @@
         :class="{ 'translate-x-0': sidebarOpen }"
     >
         <div class="p-6 flex items-center gap-1">
-            <h2 class="text-xl font-bold text-indigo-600 dark:text-indigo-400 tracking-tight">To Do Organization</h2>
+            <h2 class="text-xl font-bold text-indigo-600 dark:text-indigo-400 tracking-tight">To Do List</h2>
         </div>
         <nav class="flex-1 px-4 py-4 space-y-1">
             <a 
@@ -115,8 +115,8 @@
                         'proker' => 'Program Kerja',
                         'event' => 'Event Sekolah',
                         'rapat' => 'Rapat',
-                        'dana' => 'Dana & Sponsor',
-                        'completed' => 'Selesai (Arsip)',
+                        // 'dana' => 'Dana & Sponsor',
+                        // 'completed' => 'Selesai (Arsip)',
                     ];
                 @endphp
                 @foreach($filters as $key => $label)
@@ -165,7 +165,7 @@
                                 if ($category === 'proker') { $tagClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'; }
                                 if ($category === 'event') { $tagClass = 'bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-900/40 dark:border-purple-700 dark:text-purple-300'; }
                                 if ($category === 'rapat') { $tagClass = 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300'; }
-                                if ($category === 'dana') { $tagClass = 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'; }
+                                // if ($category === 'dana') { $tagClass = 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'; }
                                 $titleClass = $isOverdue ? 'text-red-600 dark:text-red-400' : 'text-slate-800 dark:text-slate-100';
                                 $dateClass = $isOverdue ? 'text-red-500 dark:text-red-400 font-bold' : 'text-gray-500 dark:text-gray-400';
                             @endphp
@@ -238,7 +238,7 @@
                                 if ($category === 'proker') { $tagClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'; }
                                 if ($category === 'event') { $tagClass = 'bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-900/40 dark:border-purple-700 dark:text-purple-300'; }
                                 if ($category === 'rapat') { $tagClass = 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300'; }
-                                if ($category === 'dana') { $tagClass = 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'; }
+                                // if ($category === 'dana') { $tagClass = 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'; }
                             @endphp
                             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col hover:-translate-y-1 hover:shadow-md transition-all duration-300">
                                 @if($todo->media_path)
@@ -463,7 +463,7 @@
                                     <option value="proker">Program Kerja</option>
                                     <option value="event">Event Sekolah</option>
                                     <option value="rapat">Rapat</option>
-                                    <option value="dana">Dana & Sponsor</option>
+                                    {{-- <option value="dana">Dana & Sponsor</option> --}}
                                     <option value="lainnya">Lainnya</option>
                                 </select>
                             </div>
@@ -579,7 +579,7 @@
             if ('Notification' in window && Notification.permission === 'granted') {
                 new Notification(title, {
                     body: body,
-                    icon: 'https://placehold.co/100?text=📌',
+                    
                     badge: 'https://placehold.co/32?text=📌'
                 });
                 return true;
@@ -630,10 +630,10 @@
                     const timeDiff = deadline.getTime() - now.getTime();
                     const todoId = String(todo.id);
 
-                    if (timeDiff > 0 && timeDiff <= fiveMinutesMs && !NotificationTracker.isSent(todoId, 'fiveMinutes')) {
-                        sendNotification('⏰ 5 Menit Lagi Deadline!', `Catatan: ${todo.title}\nDeadline: ${deadline.toLocaleString('id-ID')}`);
-                        NotificationTracker.markSent(todoId, 'fiveMinutes');
-                    }
+                    // if (timeDiff > 0 && timeDiff <= fiveMinutesMs && !NotificationTracker.isSent(todoId, 'fiveMinutes')) {
+                    //     sendNotification('⏰ 5 Menit Lagi Deadline!', `Catatan: ${todo.title}\nDeadline: ${deadline.toLocaleString('id-ID')}`);
+                    //     NotificationTracker.markSent(todoId, 'fiveMinutes');
+                    // }
                     
                     if (timeDiff <= 0 && timeDiff >= -deadlineWindowMs && !NotificationTracker.isSent(todoId, 'deadline')) {
                         sendNotification('🚨 Deadline Sekarang!', `Catatan: ${todo.title}\nDeadline: ${deadline.toLocaleString('id-ID')}`);
@@ -645,7 +645,7 @@
             });
         }
 
-        setInterval(checkDeadlines, 30000);
+        setInterval(checkDeadlines, 15000);
 
         document.addEventListener('livewire:init', () => {
             checkDeadlines();
