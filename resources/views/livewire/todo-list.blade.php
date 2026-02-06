@@ -89,7 +89,7 @@
                     ☰
                 </button>
                 <h1 class="text-2xl font-bold">
-                    @if($currentView === 'notes') List Catatan
+                    @if($currentView === 'notes') List
                     @elseif($currentView === 'history') Catatan Selesai
                     @elseif($currentView === 'activity-log') Activity Log
                     @endif
