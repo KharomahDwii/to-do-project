@@ -6,7 +6,6 @@ use App\Livewire\TodoList;
 use App\Models\Todo;
 use Illuminate\Http\Request;
 
-// === HALAMAN PUBLIK (bisa diakses tanpa login) ===
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
@@ -46,10 +45,9 @@ Route::post('/logout', function () {
     return redirect('/');
 })->name('logout');
 
-// === HALAMAN TERLINDUNGI (hanya untuk user login) ===
 Route::middleware(['auth'])->group(function () {
-    Route::get('/', TodoList::class)->name('home');
-
+    Route::get('/', TodoList::class)->name('dashboard'); // 🔥 Tambahkan name
+    
     Route::post('/livewire/update-todo-completed', function (Request $request) {
         $todo = Todo::find($request->id);
         if ($todo && $todo->user_id === auth()->id()) {
@@ -58,4 +56,34 @@ Route::middleware(['auth'])->group(function () {
         }
         return response()->json(['success' => true]);
     })->name('update-todo-completed');
+});
+
+Route::get('/test-activity-log', function() {
+    $todo = \App\Models\Todo::first();
+    
+    $metadata = [
+        'id' => $todo->id,
+        'title' => $todo->title,
+        'category' => 'test',
+        'deleted_by' => [
+            'id' => auth()->id(),
+            'name' => auth()->user()->name,
+            'email' => auth()->user()->email,
+        ],
+        'deleted_at' => now()->format('Y-m-d H:i:s')
+    ];
+    
+    $log = \App\Models\ActivityLog::create([
+        'user_id' => auth()->id(),
+        'todo_id' => $todo->id,
+        'action' => 'deleted',
+        'description' => 'Test delete log',
+        'metadata' => $metadata
+    ]);
+    
+    dd([
+        'log_created' => $log,
+        'metadata_stored' => $log->metadata,
+        'metadata_json' => DB::table('activity_logs')->where('id', $log->id)->value('metadata')
+    ]);
 });

@@ -1,7 +1,11 @@
-/* @import 'tailwindcss'; */
+/* resources/css/app.css */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Phosphor Icons */
+@import 'phosphor-icons/src/css/phosphor.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
