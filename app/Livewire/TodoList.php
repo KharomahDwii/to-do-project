@@ -37,9 +37,18 @@ class TodoList extends Component
     public $currentFilter = 'all';
     public $search = '';
 
+    // Properties untuk hapus riwayat
+    public $confirmingLogDeletion = false;
+    public $logToDeleteId = null;
+    public $logToDeleteTitle = '';
+    public $selectAllLogs = false;
+    public $selectedLogs = [];
+
     protected $listeners = [
         'refresh-todos' => 'loadData',
-        'profileUpdated' => 'refreshProfile'
+        'profileUpdated' => 'refreshProfile',
+        'confirmDeleteLog' => 'confirmDeleteLog',
+        'deleteSelectedLogs' => 'deleteSelectedLogs',
     ];
 
     protected $rules = [
@@ -90,6 +99,8 @@ class TodoList extends Component
         
         if ($this->currentView === 'activity-log') {
             $this->loadActivityLogs();
+            $this->selectAllLogs = false;
+            $this->selectedLogs = [];
         }
         
         return view('livewire.todo-list');
@@ -119,7 +130,7 @@ class TodoList extends Component
     private function getDefaultAvatar($letter)
     {
         $firstLetter = strtoupper(substr($letter, 0, 1));
-        return "https://placehold.co/100?text=      {$firstLetter}";
+        return "https://placehold.co/100?text=        {$firstLetter}";
     }
     
     public function refreshProfile()
@@ -499,7 +510,6 @@ class TodoList extends Component
             
             $todo->delete();
             
-            
             $this->loadData();
             
             session()->flash('message', '🗑️ Catatan berhasil dihapus!');
@@ -628,64 +638,64 @@ class TodoList extends Component
     }
 
     public function checkUpcomingDeadlines()
-{
-    if (!auth()->check()) {
-        return;
-    }
-
-    $now = now();
-    $todos = auth()->user()->todos()
-        ->where('completed', false)
-        ->whereBetween('reminder_at', [$now, $now->copy()->addMinutes(10)])
-        ->get();
-
-    foreach ($todos as $todo) {
-        if (!$todo->reminder_at) {
-            continue;
+    {
+        if (!auth()->check()) {
+            return;
         }
 
-        $diffMinutes = $now->diffInMinutes($todo->reminder_at, false);
-        
-        // Session keys untuk mencegah notifikasi berulang
-        $notificationKey5min = 'notif_5min_' . $todo->id;
-        $notificationKeyDeadline = 'notif_deadline_' . $todo->id;
+        $now = now();
+        $todos = auth()->user()->todos()
+            ->where('completed', false)
+            ->whereBetween('reminder_at', [$now, $now->copy()->addMinutes(10)])
+            ->get();
 
-        // ✅ Notifikasi 5 menit sebelum deadline (HARD-CODED)
-        if ($diffMinutes == 5 && !session()->has($notificationKey5min)) {
-            $this->dispatch('showNotification', [
-                'title' => '⏰ Pengingat 5 Menit',
-                'message' => "Deadline catatan '{$todo->title}' akan tiba dalam 5 menit!",
-                'type' => 'warning',
-                'icon' => '⏰',
-                'todoId' => $todo->id
-            ]);
-            session()->put($notificationKey5min, true);
+        foreach ($todos as $todo) {
+            if (!$todo->reminder_at) {
+                continue;
+            }
+
+            $diffMinutes = $now->diffInMinutes($todo->reminder_at, false);
             
-            Log::info('5-minute reminder notification sent', [
-                'todo_id' => $todo->id,
-                'title' => $todo->title,
-                'diff_minutes' => $diffMinutes
-            ]);
-        }
+            // Session keys untuk mencegah notifikasi berulang
+            $notificationKey5min = 'notif_5min_' . $todo->id;
+            $notificationKeyDeadline = 'notif_deadline_' . $todo->id;
 
-        // ✅ Notifikasi saat deadline tiba
-        if ($diffMinutes <= 0 && !session()->has($notificationKeyDeadline)) {
-            $this->dispatch('showNotification', [
-                'title' => '🚨 Deadline Tiba!',
-                'message' => "Waktu deadline catatan '{$todo->title}' telah tiba!",
-                'type' => 'error',
-                'icon' => '🚨',
-                'todoId' => $todo->id
-            ]);
-            session()->put($notificationKeyDeadline, true);
-            
-            Log::info('Deadline notification sent', [
-                'todo_id' => $todo->id,
-                'title' => $todo->title
-            ]);
+            // ✅ Notifikasi 5 menit sebelum deadline (HARD-CODED)
+            if ($diffMinutes == 5 && !session()->has($notificationKey5min)) {
+                $this->dispatch('showNotification', [
+                    'title' => '⏰ Pengingat 5 Menit',
+                    'message' => "Deadline catatan '{$todo->title}' akan tiba dalam 5 menit!",
+                    'type' => 'warning',
+                    'icon' => '⏰',
+                    'todoId' => $todo->id
+                ]);
+                session()->put($notificationKey5min, true);
+                
+                Log::info('5-minute reminder notification sent', [
+                    'todo_id' => $todo->id,
+                    'title' => $todo->title,
+                    'diff_minutes' => $diffMinutes
+                ]);
+            }
+
+            // ✅ Notifikasi saat deadline tiba
+            if ($diffMinutes <= 0 && !session()->has($notificationKeyDeadline)) {
+                $this->dispatch('showNotification', [
+                    'title' => '🚨 Deadline Tiba!',
+                    'message' => "Waktu deadline catatan '{$todo->title}' telah tiba!",
+                    'type' => 'error',
+                    'icon' => '🚨',
+                    'todoId' => $todo->id
+                ]);
+                session()->put($notificationKeyDeadline, true);
+                
+                Log::info('Deadline notification sent', [
+                    'todo_id' => $todo->id,
+                    'title' => $todo->title
+                ]);
+            }
         }
     }
-}
 
     public function getUpcomingTodos()
     {
@@ -697,13 +707,13 @@ class TodoList extends Component
     }
 
     public function getUncompletedTodosWithDeadline()
-{
-    return auth()->user()->todos()
-        ->whereNull('completed_at')
-        ->whereNotNull('reminder_at')
-        ->select('id', 'title', 'reminder_at')
-        ->get();
-}
+    {
+        return auth()->user()->todos()
+            ->whereNull('completed_at')
+            ->whereNotNull('reminder_at')
+            ->select('id', 'title', 'reminder_at')
+            ->get();
+    }
 
     public function getLogBorderColor($action)
     {
@@ -715,6 +725,9 @@ class TodoList extends Component
             'archived' => 'border-yellow-500',
             'profile_updated' => 'border-indigo-500',
             'logged_out' => 'border-gray-500',
+            'log_deleted' => 'border-pink-500',
+            'logs_batch_deleted' => 'border-pink-500',
+            'all_logs_deleted' => 'border-pink-500',
         ];
         return $colors[$action] ?? 'border-gray-300';
     }
@@ -729,6 +742,9 @@ class TodoList extends Component
             'archived' => 'bg-yellow-500',
             'profile_updated' => 'bg-indigo-500',
             'logged_out' => 'bg-gray-500',
+            'log_deleted' => 'bg-pink-500',
+            'logs_batch_deleted' => 'bg-pink-500',
+            'all_logs_deleted' => 'bg-pink-500',
         ];
         return $colors[$action] ?? 'bg-gray-400';
     }
@@ -743,6 +759,9 @@ class TodoList extends Component
             'archived' => 'ph-archive',
             'profile_updated' => 'ph-user-circle',
             'logged_out' => 'ph-sign-out',
+            'log_deleted' => 'ph-trash-simple',
+            'logs_batch_deleted' => 'ph-trash',
+            'all_logs_deleted' => 'ph-trash',
         ];
         return $icons[$action] ?? 'ph-clock-counter-clockwise';
     }
@@ -757,7 +776,246 @@ class TodoList extends Component
             'archived' => 'Catatan Diaktifkan Kembali',
             'profile_updated' => 'Profil Diperbarui',
             'logged_out' => 'Logout',
+            'log_deleted' => 'Riwayat Dihapus',
+            'logs_batch_deleted' => 'Riwayat Dihapus (Batch)',
+            'all_logs_deleted' => 'Semua Riwayat Dihapus',
         ];
         return $titles[$action] ?? 'Aktivitas';
+    }
+
+    // ============================================
+    // FITUR HAPUS RIWAYAT AKTIVITAS
+    // ============================================
+
+    /**
+     * Konfirmasi hapus satu riwayat
+     */
+    public function confirmDeleteLog($logId)
+    {
+        $log = ActivityLog::where('id', $logId)
+            ->where('user_id', auth()->id())
+            ->first();
+        
+        if ($log) {
+            $this->logToDeleteId = $logId;
+            $this->logToDeleteTitle = $log->description;
+            $this->confirmingLogDeletion = true;
+        } else {
+            session()->flash('error', '❌ Riwayat tidak ditemukan atau tidak memiliki akses.');
+        }
+    }
+
+    /**
+     * Hapus satu riwayat
+     */
+    public function deleteLog()
+    {
+        try {
+            $log = ActivityLog::where('id', $this->logToDeleteId)
+                ->where('user_id', auth()->id())
+                ->firstOrFail();
+            
+            $logDescription = $log->description;
+            $logAction = $log->action;
+            
+            // Simpan info untuk logging
+            $deletedLogInfo = [
+                'id' => $log->id,
+                'action' => $log->action,
+                'description' => $log->description,
+                'metadata' => $log->metadata,
+                'created_at' => $log->created_at?->format('Y-m-d H:i:s') ?? null,
+                'deleted_at' => now()->format('Y-m-d H:i:s'),
+                'deleted_by' => [
+                    'id' => auth()->id(),
+                    'name' => auth()->user()->name ?? 'User',
+                ]
+            ];
+            
+            $log->delete();
+            
+            // Log aktivitas penghapusan riwayat
+            $this->logActivity('log_deleted', "Menghapus riwayat aktivitas: {$logDescription}", null, [
+                'deleted_log_id' => $this->logToDeleteId,
+                'deleted_log_action' => $logAction,
+                'deleted_log_info' => $deletedLogInfo
+            ]);
+            
+            $this->confirmingLogDeletion = false;
+            $this->logToDeleteId = null;
+            $this->loadActivityLogs();
+            
+            session()->flash('message', '🗑️ Riwayat aktivitas berhasil dihapus!');
+            Log::info('Activity log deleted successfully', [
+                'log_id' => $this->logToDeleteId,
+                'user_id' => auth()->id(),
+                'action' => $logAction
+            ]);
+            
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            session()->flash('error', '❌ Riwayat tidak ditemukan atau tidak memiliki akses.');
+            Log::warning('Activity log not found for deletion', [
+                'log_id' => $this->logToDeleteId,
+                'user_id' => auth()->id() ?? 'guest'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error deleting activity log: ' . $e->getMessage(), [
+                'log_id' => $this->logToDeleteId,
+                'user_id' => auth()->id() ?? 'guest',
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', '❌ Terjadi kesalahan saat menghapus riwayat.');
+        }
+    }
+
+    /**
+     * Batalkan konfirmasi hapus
+     */
+    public function cancelDeleteLog()
+    {
+        $this->confirmingLogDeletion = false;
+        $this->logToDeleteId = null;
+        $this->logToDeleteTitle = '';
+    }
+
+    /**
+     * Toggle select/deselect semua riwayat
+     */
+    public function toggleSelectAllLogs()
+    {
+        if ($this->selectAllLogs) {
+            $this->selectedLogs = $this->activityLogs->pluck('id')->toArray();
+        } else {
+            $this->selectedLogs = [];
+        }
+    }
+
+    /**
+     * Hapus riwayat yang dipilih (batch delete)
+     */
+    public function deleteSelectedLogs()
+    {
+        if (empty($this->selectedLogs)) {
+            session()->flash('warning', '⚠️ Tidak ada riwayat yang dipilih.');
+            return;
+        }
+        
+        try {
+            $count = count($this->selectedLogs);
+            
+            // Ambil info logs yang akan dihapus untuk logging
+            $deletedLogsInfo = ActivityLog::whereIn('id', $this->selectedLogs)
+                ->where('user_id', auth()->id())
+                ->get()
+                ->map(function($log) {
+                    return [
+                        'id' => $log->id,
+                        'action' => $log->action,
+                        'description' => $log->description,
+                        'created_at' => $log->created_at?->format('Y-m-d H:i:s') ?? null,
+                    ];
+                })
+                ->toArray();
+            
+            // Hapus logs
+            $deletedCount = ActivityLog::whereIn('id', $this->selectedLogs)
+                ->where('user_id', auth()->id())
+                ->delete();
+            
+            // Log aktivitas penghapusan batch
+            $this->logActivity('logs_batch_deleted', "Menghapus {$count} riwayat aktivitas", null, [
+                'deleted_count' => $deletedCount,
+                'deleted_logs' => $deletedLogsInfo,
+                'deleted_at' => now()->format('Y-m-d H:i:s')
+            ]);
+            
+            $this->selectedLogs = [];
+            $this->selectAllLogs = false;
+            $this->loadActivityLogs();
+            
+            session()->flash('message', "🗑️ Berhasil menghapus {$deletedCount} riwayat aktivitas!");
+            Log::info('Batch activity logs deleted', [
+                'count' => $deletedCount,
+                'user_id' => auth()->id()
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error batch deleting activity logs: ' . $e->getMessage(), [
+                'log_ids' => $this->selectedLogs,
+                'user_id' => auth()->id() ?? 'guest',
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', '❌ Terjadi kesalahan saat menghapus riwayat.');
+        }
+    }
+
+    /**
+     * Konfirmasi hapus semua riwayat
+     */
+    public function confirmDeleteAllLogs()
+    {
+        $this->dispatch('confirmDeleteAllLogs');
+    }
+
+    /**
+     * Hapus semua riwayat
+     */
+    public function deleteAllLogs()
+    {
+        try {
+            // Hitung jumlah logs sebelum dihapus
+            $totalCount = ActivityLog::where('user_id', auth()->id())->count();
+            
+            if ($totalCount === 0) {
+                session()->flash('warning', 'ℹ️ Tidak ada riwayat untuk dihapus.');
+                return;
+            }
+            
+            // Ambil info semua logs untuk logging
+            $allLogsInfo = ActivityLog::where('user_id', auth()->id())
+                ->get()
+                ->map(function($log) {
+                    return [
+                        'id' => $log->id,
+                        'action' => $log->action,
+                        'description' => $log->description,
+                        'created_at' => $log->created_at?->format('Y-m-d H:i:s') ?? null,
+                    ];
+                })
+                ->toArray();
+            
+            // Hapus semua logs
+            ActivityLog::where('user_id', auth()->id())->delete();
+            
+            // Log aktivitas penghapusan semua riwayat
+            $this->logActivity('all_logs_deleted', "Menghapus semua {$totalCount} riwayat aktivitas", null, [
+                'deleted_count' => $totalCount,
+                'deleted_logs' => $allLogsInfo,
+                'deleted_at' => now()->format('Y-m-d H:i:s')
+            ]);
+            
+            $this->loadActivityLogs();
+            
+            session()->flash('message', "🗑️ Berhasil menghapus semua {$totalCount} riwayat aktivitas!");
+            Log::info('All activity logs deleted', [
+                'count' => $totalCount,
+                'user_id' => auth()->id()
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error deleting all activity logs: ' . $e->getMessage(), [
+                'user_id' => auth()->id() ?? 'guest',
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', '❌ Terjadi kesalahan saat menghapus semua riwayat.');
+        }
+    }
+
+    /**
+     * Helper untuk cek apakah log dipilih
+     */
+    public function isLogSelected($logId)
+    {
+        return in_array($logId, $this->selectedLogs);
     }
 }
