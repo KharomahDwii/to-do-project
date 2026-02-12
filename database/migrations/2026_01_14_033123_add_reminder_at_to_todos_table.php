@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-// database/migrations/xxxx_add_reminder_minutes_to_todos_table.php
 public function up()
 {
     Schema::table('todos', function (Blueprint $table) {

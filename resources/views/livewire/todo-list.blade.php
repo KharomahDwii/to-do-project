@@ -251,10 +251,8 @@
 @endif
 
 @elseif($currentView === 'activity-log')
-<!-- Activity Log View Sederhana dengan Hanya Tombol Hapus Semua -->
 <div class="space-y-4">
 
-    <!-- Header dengan tombol hapus semua -->
     <div class="flex items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
         <div>
             <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
@@ -268,7 +266,6 @@
 
         @if($activityLogs->count() > 0)
         <div class="flex items-center gap-2">
-            <!-- Tombol Hapus Semua (dengan konfirmasi) -->
             <button
                 wire:click="confirmDeleteAllLogs"
                 class="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-sm hover:shadow"
@@ -280,7 +277,6 @@
         @endif
     </div>
 
-    <!-- Tidak ada riwayat -->
     @if($activityLogs->count() === 0)
         <div class="bg-white dark:bg-slate-800 rounded-lg p-8 text-center border-2 border-dashed border-gray-300 dark:border-gray-600">
             <div class="mx-auto w-20 h-20 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
@@ -290,21 +286,17 @@
             <p class="text-gray-500 dark:text-gray-400">Aktivitas Anda akan muncul di sini</p>
         </div>
     @else
-        <!-- Activity Logs List (tanpa checkbox/tombol hapus per item) -->
         <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
             @foreach($activityLogs as $log)
             <div
                 class="bg-white dark:bg-slate-800 rounded-lg p-4 border-l-4 {{ $this->getLogBorderColor($log->action) }}
                        hover:shadow-md transition-shadow">
 
-                <!-- Konten Utama -->
                 <div class="flex items-start gap-3">
-                    <!-- Icon -->
                     <span class="inline-flex items-center justify-center w-8 h-8 rounded-full flex-shrink-0 {{ $this->getLogBgColor($log->action) }}">
                         <i class="{{ $this->getLogIcon($log->action) }} text-white text-lg"></i>
                     </span>
 
-                    <!-- Deskripsi -->
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 mb-1">
                             <h4 class="font-semibold text-gray-800 dark:text-white">{{ $this->getLogTitle($log->action) }}</h4>
@@ -319,7 +311,6 @@
                             {{ $log->description }}
                         </p>
 
-                        <!-- Metadata tambahan untuk log deleted -->
                         @if($log->action === 'deleted' && isset($log->metadata['description_preview']))
                         <div class="mt-2">
                             <div class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-700 rounded px-2 py-1 inline-block">
@@ -331,7 +322,6 @@
                     </div>
                 </div>
 
-                <!-- Timestamp -->
                 <div class="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
                     <span>
                         <i class="ph-clock mr-1"></i>
@@ -370,7 +360,7 @@
                     <input type="hidden" wire:model="editingId">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Judul Catatan</label>
-                        <input type="text" wire:model="modalTitle" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="Contoh: Persiapan Pensi" required />
+                        <input type="text" wire:model="modalTitle" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="Judul kegiatan..." required />
                         @error('modalTitle') <div class="text-red-500 text-xs mt-1">{{ $message }}</div> @enderror
                     </div>
                     <div>
@@ -447,7 +437,7 @@
                     x-ref="avatarInput"
                     wire:model="profileAvatarFile"
                     />
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Klik gambar untuk ganti</p>
+                    {{-- <p class="text-xs text-gray-500 dark:text-gray-400">Klik gambar untuk ganti</p> --}}
                     @error('profileAvatarFile')
                     <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                     @enderror
@@ -469,7 +459,6 @@
 </div>
 @endif
 
-<!-- Modal Konfirmasi Hapus Semua Riwayat (SINGLE FEATURE) -->
 <div
     x-data="{ showDeleteAllModal: false }"
     x-init="$wire.on('confirmDeleteAllLogs', () => { showDeleteAllModal = true })"

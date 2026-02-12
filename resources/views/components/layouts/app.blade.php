@@ -13,10 +13,8 @@
     </div>
     @livewireScripts
     <script>
-        // Fix untuk Livewire + Alpine conflict
         document.addEventListener('livewire:init', () => {
             Livewire.hook('message.processed', (message, component) => {
-                // Refresh Alpine components setelah update Livewire
                 if (window.Alpine && typeof window.Alpine.mutateDom === 'function') {
                     window.Alpine.mutateDom(() => {});
                 }

@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    // database/migrations/xxxx_create_activity_logs_table.php
 public function up()
 {
     Schema::create('activity_logs', function (Blueprint $table) {
@@ -15,7 +14,7 @@ public function up()
         $table->foreignId('todo_id')->nullable()->constrained()->onDelete('set null');
         $table->string('action');
         $table->text('description');
-        $table->json('metadata')->nullable(); // HARUS JSON!
+        $table->json('metadata')->nullable();
         $table->timestamps();
     });
 }

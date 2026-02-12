@@ -37,7 +37,6 @@ class TodoList extends Component
     public $currentFilter = 'all';
     public $search = '';
 
-    // Properties untuk hapus riwayat
     public $confirmingLogDeletion = false;
     public $logToDeleteId = null;
     public $logToDeleteTitle = '';
@@ -656,11 +655,9 @@ class TodoList extends Component
 
             $diffMinutes = $now->diffInMinutes($todo->reminder_at, false);
             
-            // Session keys untuk mencegah notifikasi berulang
             $notificationKey5min = 'notif_5min_' . $todo->id;
             $notificationKeyDeadline = 'notif_deadline_' . $todo->id;
 
-            // ✅ Notifikasi 5 menit sebelum deadline (HARD-CODED)
             if ($diffMinutes == 5 && !session()->has($notificationKey5min)) {
                 $this->dispatch('showNotification', [
                     'title' => '⏰ Pengingat 5 Menit',
@@ -678,7 +675,6 @@ class TodoList extends Component
                 ]);
             }
 
-            // ✅ Notifikasi saat deadline tiba
             if ($diffMinutes <= 0 && !session()->has($notificationKeyDeadline)) {
                 $this->dispatch('showNotification', [
                     'title' => '🚨 Deadline Tiba!',
@@ -783,13 +779,6 @@ class TodoList extends Component
         return $titles[$action] ?? 'Aktivitas';
     }
 
-    // ============================================
-    // FITUR HAPUS RIWAYAT AKTIVITAS
-    // ============================================
-
-    /**
-     * Konfirmasi hapus satu riwayat
-     */
     public function confirmDeleteLog($logId)
     {
         $log = ActivityLog::where('id', $logId)
@@ -805,9 +794,6 @@ class TodoList extends Component
         }
     }
 
-    /**
-     * Hapus satu riwayat
-     */
     public function deleteLog()
     {
         try {
@@ -818,7 +804,6 @@ class TodoList extends Component
             $logDescription = $log->description;
             $logAction = $log->action;
             
-            // Simpan info untuk logging
             $deletedLogInfo = [
                 'id' => $log->id,
                 'action' => $log->action,
@@ -834,7 +819,6 @@ class TodoList extends Component
             
             $log->delete();
             
-            // Log aktivitas penghapusan riwayat
             $this->logActivity('log_deleted', "Menghapus riwayat aktivitas: {$logDescription}", null, [
                 'deleted_log_id' => $this->logToDeleteId,
                 'deleted_log_action' => $logAction,
@@ -868,9 +852,6 @@ class TodoList extends Component
         }
     }
 
-    /**
-     * Batalkan konfirmasi hapus
-     */
     public function cancelDeleteLog()
     {
         $this->confirmingLogDeletion = false;
@@ -878,9 +859,6 @@ class TodoList extends Component
         $this->logToDeleteTitle = '';
     }
 
-    /**
-     * Toggle select/deselect semua riwayat
-     */
     public function toggleSelectAllLogs()
     {
         if ($this->selectAllLogs) {
@@ -890,9 +868,6 @@ class TodoList extends Component
         }
     }
 
-    /**
-     * Hapus riwayat yang dipilih (batch delete)
-     */
     public function deleteSelectedLogs()
     {
         if (empty($this->selectedLogs)) {
@@ -903,7 +878,6 @@ class TodoList extends Component
         try {
             $count = count($this->selectedLogs);
             
-            // Ambil info logs yang akan dihapus untuk logging
             $deletedLogsInfo = ActivityLog::whereIn('id', $this->selectedLogs)
                 ->where('user_id', auth()->id())
                 ->get()
@@ -917,12 +891,10 @@ class TodoList extends Component
                 })
                 ->toArray();
             
-            // Hapus logs
             $deletedCount = ActivityLog::whereIn('id', $this->selectedLogs)
                 ->where('user_id', auth()->id())
                 ->delete();
-            
-            // Log aktivitas penghapusan batch
+
             $this->logActivity('logs_batch_deleted', "Menghapus {$count} riwayat aktivitas", null, [
                 'deleted_count' => $deletedCount,
                 'deleted_logs' => $deletedLogsInfo,
@@ -949,21 +921,14 @@ class TodoList extends Component
         }
     }
 
-    /**
-     * Konfirmasi hapus semua riwayat
-     */
     public function confirmDeleteAllLogs()
     {
         $this->dispatch('confirmDeleteAllLogs');
     }
 
-    /**
-     * Hapus semua riwayat
-     */
     public function deleteAllLogs()
     {
         try {
-            // Hitung jumlah logs sebelum dihapus
             $totalCount = ActivityLog::where('user_id', auth()->id())->count();
             
             if ($totalCount === 0) {
@@ -971,7 +936,6 @@ class TodoList extends Component
                 return;
             }
             
-            // Ambil info semua logs untuk logging
             $allLogsInfo = ActivityLog::where('user_id', auth()->id())
                 ->get()
                 ->map(function($log) {
@@ -984,10 +948,8 @@ class TodoList extends Component
                 })
                 ->toArray();
             
-            // Hapus semua logs
             ActivityLog::where('user_id', auth()->id())->delete();
             
-            // Log aktivitas penghapusan semua riwayat
             $this->logActivity('all_logs_deleted', "Menghapus semua {$totalCount} riwayat aktivitas", null, [
                 'deleted_count' => $totalCount,
                 'deleted_logs' => $allLogsInfo,
@@ -1011,9 +973,6 @@ class TodoList extends Component
         }
     }
 
-    /**
-     * Helper untuk cek apakah log dipilih
-     */
     public function isLogSelected($logId)
     {
         return in_array($logId, $this->selectedLogs);
