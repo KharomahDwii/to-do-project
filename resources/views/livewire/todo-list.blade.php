@@ -1,12 +1,11 @@
-<div class="min-h-screen bg-gray-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 flex transition-colors duration-300" 
-     x-data="{ sidebarOpen: false }" 
-     x-on:resize.window="sidebarOpen = window.innerWidth >= 768" 
+<div class="min-h-screen bg-gray-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 flex transition-colors duration-300"
+     x-data="{ sidebarOpen: false }"
+     x-on:resize.window="sidebarOpen = window.innerWidth >= 768"
      x-init="sidebarOpen = window.innerWidth >= 768">
 
-    <!-- SIDEBAR -->
     <aside class="fixed inset-y-0 left-0 w-64 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 z-50 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col shadow-xl md:shadow-none"
            :class="{ 'translate-x-0': sidebarOpen }">
-        
+
         <div class="p-6 flex items-center gap-1">
             <h2 class="text-xl font-bold text-indigo-600 dark:text-indigo-400 tracking-tight">To Do List</h2>
         </div>
@@ -25,14 +24,13 @@
                 📋 Riwayat Aktivitas
             </a>
 
-            <!-- Menu Manajemen Baru -->
             <div class="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
                 <p class="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Manajemen</p>
-                <button wire:click="openCategoryModal()" 
+                <button wire:click="openCategoryModal()"
                     class="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors text-left">
                     <span>🏷️</span> Kelola Kategori
                 </button>
-                <button wire:click="openPjModal()" 
+                <button wire:click="openPjModal()"
                     class="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors text-left">
                     <span>👤</span> Kelola PJ
                 </button>
@@ -66,10 +64,8 @@
         </div>
     </aside>
 
-    <!-- Overlay Mobile -->
     <div class="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm" x-show="sidebarOpen" x-on:click="sidebarOpen = false" x-transition></div>
 
-    <!-- MAIN CONTENT -->
     <main class="flex-1 flex flex-col overflow-hidden">
         <header class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
@@ -92,7 +88,6 @@
             @endif
         </header>
 
-        <!-- Filter Bar -->
         @if($currentView === 'notes')
         <div class="px-6 py-4 bg-gray-50 dark:bg-slate-900/50 border-b border-gray-200 dark:border-gray-700 overflow-x-auto whitespace-nowrap no-scrollbar">
             <div class="flex gap-2">
@@ -117,8 +112,7 @@
                     {{ $label }}
                 </button>
                 @endforeach
-                
-                <!-- Filter Kategori Custom -->
+
                 @foreach($categories as $cat)
                     @if(!isset($cat['is_default']) || !$cat['is_default'])
                     <button wire:click="setCategoryFilter('{{ $cat['id'] }}')"
@@ -140,7 +134,6 @@
         </div>
         @endif
 
-        <!-- Content Area -->
         <div class="flex-1 overflow-y-auto p-6">
             @if($currentView === 'notes')
                 @if($this->filteredTodos->isEmpty())
@@ -159,16 +152,16 @@
                         $category = $todo->metadata['category'] ?? 'lainnya';
                         $pjId = $todo->metadata['pj_id'] ?? null;
                         $pjName = $this->getPjName($pjId);
-                        
+
                         $tagClass = 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-gray-300';
                         if ($category === 'proker') { $tagClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'; }
                         elseif ($category === 'event') { $tagClass = 'bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-900/40 dark:border-purple-700 dark:text-purple-300'; }
                         elseif ($category === 'rapat') { $tagClass = 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300'; }
                         elseif ($category === 'dana') { $tagClass = 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'; }
-                        
+
                         $customCat = collect($categories)->firstWhere('id', $category);
                         if($customCat && !isset($customCat['is_default'])) {
-                             $tagClass = 'text-white'; 
+                             $tagClass = 'text-white';
                         }
 
                         $titleClass = $isOverdue ? 'text-red-600 dark:text-red-400' : 'text-slate-800 dark:text-slate-100';
@@ -191,7 +184,7 @@
                             @if($todo->description)
                             <p class="text-gray-500 dark:text-gray-400 text-sm mb-4 line-clamp-3 flex-1">{{ $todo->description }}</p>
                             @endif
-                            
+
                             @if($pjName)
                             <div class="mb-3 flex items-center gap-2 text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1 rounded w-fit">
                                 <span>👤</span> <span class="font-medium">{{ $pjName }}</span>
@@ -307,7 +300,6 @@
         </div>
     </main>
 
-    <!-- MODAL CREATE/EDIT TODO -->
     @if($showModal)
     <div class="fixed inset-0 z-50" style="display: block;">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" wire:click="closeModal"></div>
@@ -329,7 +321,7 @@
                         <textarea wire:model="modalDescription" rows="3" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="Detail kegiatan..." required></textarea>
                         @error('modalDescription') <div class="text-red-500 text-xs mt-1">{{ $message }}</div> @enderror
                     </div>
-                    
+
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Kategori</label>
@@ -390,7 +382,6 @@
     </div>
     @endif
 
-    <!-- MODAL PROFILE -->
     @if($showProfileModal)
     <div class="fixed inset-0 z-50" style="display: block;">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" wire:click="closeProfileModal"></div>
@@ -424,9 +415,8 @@
     </div>
     @endif
 
-    <!-- MODAL MANAJEMEN KATEGORI (CENTERED FIX) -->
     @if($showCategoryModal)
-    <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6" 
+    <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6"
          style="display: flex !important; position: fixed !important; top: 0; left: 0; right: 0; bottom: 0;">
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" wire:click="closeCategoryModal"></div>
         <div class="relative bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl transform transition-all scale-100 opacity-100 animate-fade-in max-h-[90vh] overflow-y-auto custom-scrollbar z-10" style="position: relative; margin: auto;">
@@ -487,9 +477,8 @@
     </div>
     @endif
 
-    <!-- MODAL MANAJEMEN PJ (CENTERED FIX) -->
     @if($showPjModal)
-    <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6" 
+    <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6"
          style="display: flex !important; position: fixed !important; top: 0; left: 0; right: 0; bottom: 0;">
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" wire:click="closePjModal"></div>
         <div class="relative bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl transform transition-all scale-100 opacity-100 animate-fade-in max-h-[90vh] overflow-y-auto custom-scrollbar z-10" style="position: relative; margin: auto;">
@@ -542,12 +531,11 @@
     </div>
     @endif
 
-    <!-- MODAL KONFIRMASI HAPUS (CUSTOM POPUP) -->
-    <div x-data="{ 
-            isOpen: false, 
-            type: '', 
-            itemId: null, 
-            itemName: '' 
+    <div x-data="{
+            isOpen: false,
+            type: '',
+            itemId: null,
+            itemName: ''
         }"
         x-init="
             $wire.on('openDeleteConfirmation', (event) => {
@@ -571,15 +559,12 @@
         x-transition:leave-start="opacity-100 scale-100"
         x-transition:leave-end="opacity-0 scale-95">
 
-        <!-- Backdrop -->
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="isOpen = false"></div>
 
-        <!-- Modal Content -->
         <div class="relative bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl p-6 transform transition-all scale-100"
              @click.away="isOpen = false">
-            
+
             <div class="flex flex-col items-center text-center">
-                <!-- Icon Warning -->
                 <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
                     <svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
@@ -589,9 +574,9 @@
                 <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">
                     Hapus <span x-text="type === 'category' ? 'Kategori' : 'PJ'"></span>?
                 </h3>
-                
+
                 <p class="text-gray-600 dark:text-gray-300 mb-6 text-sm leading-relaxed">
-                    Apakah Anda yakin ingin menghapus 
+                    Apakah Anda yakin ingin menghapus
                     <strong class="text-indigo-600 dark:text-indigo-400" x-text="itemName"></strong>?
                     <br>
                     <span x-show="type === 'category'" class="text-xs text-orange-500 mt-1 block">
@@ -603,14 +588,14 @@
                 </p>
 
                 <div class="flex gap-3 w-full">
-                    <button @click="isOpen = false" 
+                    <button @click="isOpen = false"
                         class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
                         Batal
                     </button>
                     <button @click="
                         $wire.performDelete(type, itemId);
                         isOpen = false;
-                    " 
+                    "
                         class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium shadow-lg shadow-red-200 dark:shadow-none transition-all transform active:scale-95 flex items-center justify-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         Ya, Hapus
@@ -636,24 +621,22 @@
         </div>
     </div>
 
-    <!-- NOTIFICATIONS -->
     @if(session()->has('message'))
-    <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)" 
-         class="fixed bottom-5 right-5 z-50 flex items-center gap-3 p-4 rounded-xl shadow-lg border-l-4 border-green-500 bg-white dark:bg-slate-800 min-w-[300px] transform translate-x-full transition-all duration-300" 
+    <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
+         class="fixed bottom-5 right-5 z-50 flex items-center gap-3 p-4 rounded-xl shadow-lg border-l-4 border-green-500 bg-white dark:bg-slate-800 min-w-[300px] transform translate-x-full transition-all duration-300"
          x-transition:enter="transform transition ease-out duration-300" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0">
         ✅ <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ session('message') }}</span>
     </div>
     @endif
-    
+
     @if(session()->has('error'))
-    <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" 
-         class="fixed bottom-5 right-5 z-50 flex items-center gap-3 p-4 rounded-xl shadow-lg border-l-4 border-red-500 bg-white dark:bg-slate-800 min-w-[300px] transform translate-x-full transition-all duration-300" 
+    <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)"
+         class="fixed bottom-5 right-5 z-50 flex items-center gap-3 p-4 rounded-xl shadow-lg border-l-4 border-red-500 bg-white dark:bg-slate-800 min-w-[300px] transform translate-x-full transition-all duration-300"
          x-transition:enter="transform transition ease-out duration-300" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0">
         ❌ <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ session('error') }}</span>
     </div>
     @endif
 
-    <!-- SCRIPTS -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if ('Notification' in window && Notification.permission === 'default') {

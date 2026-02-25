@@ -17,8 +17,7 @@ class CheckDeadlineNotifications extends Command
     public function handle()
     {
         $now = Carbon::now();
-        
-        // Cari todos yang melewati deadline (5 menit terakhir)
+
         $overdueTodos = Todo::where('completed', false)
             ->whereNotNull('reminder_at')
             ->where('reminder_at', '<=', $now)
@@ -28,11 +27,10 @@ class CheckDeadlineNotifications extends Command
         foreach ($overdueTodos as $todo) {
             try {
                 $user = User::find($todo->user_id);
-                
+
                 if ($user) {
-                    // Kirim email notifikasi
                     $user->notify(new DeadlineNotification($todo, 0));
-                    
+
                     Log::info('Deadline notification sent', [
                         'user_id' => $user->id,
                         'todo_id' => $todo->id,
