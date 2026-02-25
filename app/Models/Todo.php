@@ -30,10 +30,13 @@ class Todo extends Model
     {
         return $this->belongsTo(User::class);
     }
+<<<<<<< HEAD
 
 public function category()
 {
     return $this->belongsTo(Category::class);
 }
 
+=======
+>>>>>>> 04aac4a680a6a495057e4e49de8b3b64be28f879
 }

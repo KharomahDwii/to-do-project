@@ -11,12 +11,17 @@ return new class extends Migration
      */
     public function up()
 {
+<<<<<<< HEAD
     Schema::create('activity_logs', function (Blueprint $table) {
         $table->id();
         $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
         $table->string('action');
         $table->text('description')->nullable();
         $table->timestamps();
+=======
+    Schema::table('todos', function (Blueprint $table) {
+        $table->text('description')->nullable();
+>>>>>>> 04aac4a680a6a495057e4e49de8b3b64be28f879
     });
 }
 

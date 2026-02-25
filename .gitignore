@@ -22,8 +22,11 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+<<<<<<< HEAD
 node_modules/
 dist/
 build/
 *.exe
 To Do List-win32-x64/
+=======
+>>>>>>> 04aac4a680a6a495057e4e49de8b3b64be28f879

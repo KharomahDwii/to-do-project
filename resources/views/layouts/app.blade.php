@@ -15,7 +15,12 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans antialiased">
+<<<<<<< HEAD
 
+=======
+        <div class="min-h-screen bg-gray-100">
+            @include('layouts.navigation')
+>>>>>>> 04aac4a680a6a495057e4e49de8b3b64be28f879
 
             <!-- Page Heading -->
             @isset($header)

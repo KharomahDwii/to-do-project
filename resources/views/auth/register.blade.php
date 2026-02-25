@@ -560,7 +560,11 @@
                         <span class="error-message">{{ $message }}</span>
                     @enderror
                 </div>
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> 04aac4a680a6a495057e4e49de8b3b64be28f879
                 <div class="form-group">
                     <label for="password">Kata Sandi</label>
                     <div class="password-group">
